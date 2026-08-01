@@ -9,6 +9,9 @@ export type ActiveAbilityId =
   | 'rift-step'
   | 'heaven-judgment'
   | 'eternal-apocalypse'
+  | 'supreme-starfall'
+  | 'void-dominion'
+  | 'last-night-verdict'
 
 export type ActiveAbilityRarity =
   | 'Thường'
@@ -16,6 +19,7 @@ export type ActiveAbilityRarity =
   | 'Sử thi'
   | 'Huyền thoại'
   | 'Tối thượng'
+  | 'Độc quyền'
 
 export type ActiveAbilityDefinition = {
   id: ActiveAbilityId
@@ -31,6 +35,8 @@ export type ActiveAbilityDefinition = {
   secondaryColor: number
   previewColor: string
   previewSecondary: string
+  rewardOnly?: boolean
+  honorTitle?: string
 }
 
 // Production: kỹ năng chủ động phải được mở bằng Mảnh Đêm.
@@ -187,6 +193,57 @@ export const ACTIVE_ABILITY_DEFINITIONS: readonly ActiveAbilityDefinition[] = [
     secondaryColor: 0xc4b5fd,
     previewColor: '#f43f5e',
     previewSecondary: '#c4b5fd',
+  },
+  {
+    id: 'supreme-starfall',
+    name: 'Thiên Vẫn Tối Thượng',
+    codename: 'SUPREME-STARFALL',
+    rarity: 'Độc quyền',
+    price: 0,
+    cooldownSeconds: 68,
+    icon: '✧',
+    description: 'Triệu hồi chín thiên thạch vương giả giáng xuống mục tiêu nguy hiểm nhất.',
+    effectText: '9 thiên thạch • 750% sát thương mục tiêu • Nổ lan 180% trong bán kính 120.',
+    color: 0xa855f7,
+    secondaryColor: 0xfef08a,
+    previewColor: '#a855f7',
+    previewSecondary: '#fef08a',
+    rewardOnly: true,
+    honorTitle: 'TOP 1 TỐI THƯỢNG',
+  },
+  {
+    id: 'void-dominion',
+    name: 'Vương Quyền Hư Không',
+    codename: 'VOID-DOMINION',
+    rarity: 'Độc quyền',
+    price: 0,
+    cooldownSeconds: 58,
+    icon: '◈',
+    description: 'Mở một lõi chân không khóa chặt vùng đông quái và nghiền nát chúng.',
+    effectText: '7 giây • Mỗi 0,7 giây gây 150% sát thương trong bán kính 320 • Kết thúc nổ 450%.',
+    color: 0x2563eb,
+    secondaryColor: 0x67e8f9,
+    previewColor: '#2563eb',
+    previewSecondary: '#67e8f9',
+    rewardOnly: true,
+    honorTitle: 'TOP 1 HƯ KHÔNG',
+  },
+  {
+    id: 'last-night-verdict',
+    name: 'Phán Quyết Đêm Cuối',
+    codename: 'LAST-NIGHT-VERDICT',
+    rarity: 'Độc quyền',
+    price: 0,
+    cooldownSeconds: 62,
+    icon: '✕',
+    description: 'Chém ba vòng phán quyết đỏ vàng xuyên qua toàn bộ vòng vây.',
+    effectText: '3 đợt chém • Mỗi đợt gây 320% sát thương trong bán kính 440 • Tối đa 35 mục tiêu.',
+    color: 0xdc2626,
+    secondaryColor: 0xfde047,
+    previewColor: '#dc2626',
+    previewSecondary: '#fde047',
+    rewardOnly: true,
+    honorTitle: 'TOP 1 ĐÊM CUỐI',
   },
 ]
 

@@ -9,6 +9,9 @@ export type PlayerSkinId =
   | 'void-king'
   | 'eclipse-emperor'
   | 'final-calamity'
+  | 'supreme-champion'
+  | 'void-conqueror'
+  | 'last-night-overlord'
 
 export type PlayerSkinRarity =
   | 'Mặc định'
@@ -17,6 +20,7 @@ export type PlayerSkinRarity =
   | 'Sử thi'
   | 'Huyền thoại'
   | 'Tối thượng'
+  | 'Độc quyền'
 
 export type PlayerSkinArchetype =
   | 'tactical'
@@ -29,8 +33,11 @@ export type PlayerSkinArchetype =
   | 'void'
   | 'eclipse'
   | 'calamity'
+  | 'champion'
+  | 'astral'
+  | 'overlord'
 
-export type PlayerSkinEffectTier = 0 | 1 | 2 | 3
+export type PlayerSkinEffectTier = 0 | 1 | 2 | 3 | 4
 
 export type PlayerSkinDefinition = {
   id: PlayerSkinId
@@ -57,6 +64,8 @@ export type PlayerSkinDefinition = {
   previewSecondary: string
   previewAccent: string
   previewGlow: string
+  rewardOnly?: boolean
+  auraStyle?: 'royal' | 'void' | 'nightfire'
 }
 
 export const DEFAULT_PLAYER_SKIN_ID: PlayerSkinId = 'survivor'
@@ -134,6 +143,30 @@ export const PLAYER_SKIN_DEFINITIONS: readonly PlayerSkinDefinition[] = [
     primaryColor: 0x312e81, secondaryColor: 0x991b1b, accentColor: 0xfde047, darkColor: 0x020617, eyeColor: 0xffffff,
     auraColor: 0x6366f1, projectileColor: 0xf43f5e, projectileCoreColor: 0xffffff, trailColor: 0x22d3ee, impactColor: 0xfde047,
     previewPrimary: '#312e81', previewSecondary: '#991b1b', previewAccent: '#fde047', previewGlow: '#6366f1',
+  },
+  {
+    id: 'supreme-champion', name: 'Vương Giả Tối Thượng', codename: 'SUPREME-CHAMPION', rarity: 'Độc quyền', archetype: 'champion',
+    price: 0, statBonus: 0.15, description: 'Chiến giáp vương giả dát vàng, mang lõi tinh tú và vương miện chiến thắng.', passiveText: '+15% chỉ số • Đại hào quang hoàng kim • Chỉ mở bằng phần thưởng ID.', effectTier: 4,
+    primaryColor: 0x4c1d95, secondaryColor: 0xf59e0b, accentColor: 0xfef08a, darkColor: 0x090314, eyeColor: 0xffffff,
+    auraColor: 0xa855f7, projectileColor: 0xfbbf24, projectileCoreColor: 0xffffff, trailColor: 0xe879f9, impactColor: 0xfef08a,
+    previewPrimary: '#4c1d95', previewSecondary: '#f59e0b', previewAccent: '#fef08a', previewGlow: '#c084fc',
+    rewardOnly: true, auraStyle: 'royal',
+  },
+  {
+    id: 'void-conqueror', name: 'Chinh Phục Hư Không', codename: 'VOID-CONQUEROR', rarity: 'Độc quyền', archetype: 'astral',
+    price: 0, statBonus: 0.15, description: 'Thống lĩnh khe nứt với giáp thiên hà, lõi chân không và cánh năng lượng xanh tím.', passiveText: '+15% chỉ số • Đại hào quang hư không • Chỉ mở bằng phần thưởng ID.', effectTier: 4,
+    primaryColor: 0x1e3a8a, secondaryColor: 0x6d28d9, accentColor: 0x67e8f9, darkColor: 0x020617, eyeColor: 0xe0f2fe,
+    auraColor: 0x2563eb, projectileColor: 0x22d3ee, projectileCoreColor: 0xffffff, trailColor: 0x8b5cf6, impactColor: 0xa5f3fc,
+    previewPrimary: '#1e3a8a', previewSecondary: '#6d28d9', previewAccent: '#67e8f9', previewGlow: '#3b82f6',
+    rewardOnly: true, auraStyle: 'void',
+  },
+  {
+    id: 'last-night-overlord', name: 'Bá Chủ Đêm Cuối', codename: 'LAST-NIGHT-OVERLORD', rarity: 'Độc quyền', archetype: 'overlord',
+    price: 0, statBonus: 0.15, description: 'Bạo chúa của đêm tận thế, khoác giáp đỏ đen và vương miện hỏa ngục.', passiveText: '+15% chỉ số • Đại hào quang huyết hỏa • Chỉ mở bằng phần thưởng ID.', effectTier: 4,
+    primaryColor: 0x7f1d1d, secondaryColor: 0xea580c, accentColor: 0xfde047, darkColor: 0x090303, eyeColor: 0xfffbeb,
+    auraColor: 0xdc2626, projectileColor: 0xfb7185, projectileCoreColor: 0xffffff, trailColor: 0xf97316, impactColor: 0xfbbf24,
+    previewPrimary: '#7f1d1d', previewSecondary: '#ea580c', previewAccent: '#fde047', previewGlow: '#ef4444',
+    rewardOnly: true, auraStyle: 'nightfire',
   },
 ]
 

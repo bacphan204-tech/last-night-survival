@@ -60,6 +60,7 @@ export class ActiveAbilityCombatSystem {
   private overheadOuter: Phaser.GameObjects.Arc | null = null
   private overheadInner: Phaser.GameObjects.Arc | null = null
   private overheadIcon: Phaser.GameObjects.Image | null = null
+  private overheadTitle: Phaser.GameObjects.Text | null = null
   private overheadCooldown: Phaser.GameObjects.Text | null = null
 
   private buttonOuter: Phaser.GameObjects.Arc | null = null
@@ -87,6 +88,12 @@ export class ActiveAbilityCombatSystem {
   private shieldObjects: AbilityObjects = []
   private apocalypseObjects: AbilityObjects = []
 
+  private voidDominionUntil = 0
+  private nextVoidDominionTickAt = 0
+  private voidDominionCenterX = 0
+  private voidDominionCenterY = 0
+  private voidDominionObjects: AbilityObjects = []
+
   constructor(scene: Phaser.Scene, abilityId: ActiveAbilityId | null) {
     this.scene = scene
     this.definition = getActiveAbilityDefinition(abilityId)
@@ -98,38 +105,68 @@ export class ActiveAbilityCombatSystem {
     const color = this.definition.color
     const secondary = this.definition.secondaryColor
 
-    this.overheadOuter = this.scene.add
-      .circle(playerX, playerY - 72, 16, 0x020617, 0.42)
-      .setStrokeStyle(3, color, 0.92)
-      .setBlendMode(Phaser.BlendModes.ADD)
-      .setDepth(playerY + 25)
+    if (this.definition.honorTitle) {
+      this.overheadTitle = this.scene.add
+        .text(playerX, playerY - 78, this.definition.honorTitle, {
+          fontFamily: 'Arial, sans-serif',
+          fontSize: '11px',
+          fontStyle: 'bold',
+          color: this.toCssColor(secondary),
+          stroke: '#020617',
+          strokeThickness: 5,
+          letterSpacing: 1.1,
+          align: 'center',
+        })
+        .setOrigin(0.5)
+        .setDepth(playerY + 29)
+        .setShadow(0, 0, this.toCssColor(color), 9, true, true)
 
-    this.overheadInner = this.scene.add
-      .circle(playerX, playerY - 72, 10, color, 0.18)
-      .setStrokeStyle(1, secondary, 0.85)
-      .setBlendMode(Phaser.BlendModes.ADD)
-      .setDepth(playerY + 26)
+      this.overheadCooldown = this.scene.add
+        .text(playerX, playerY - 60, '', {
+          fontFamily: 'Arial, sans-serif',
+          fontSize: '8px',
+          fontStyle: 'bold',
+          color: '#f8fafc',
+          stroke: '#020617',
+          strokeThickness: 3,
+          letterSpacing: 0.5,
+        })
+        .setOrigin(0.5)
+        .setDepth(playerY + 29)
+    } else {
+      this.overheadOuter = this.scene.add
+        .circle(playerX, playerY - 72, 16, 0x020617, 0.42)
+        .setStrokeStyle(3, color, 0.92)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setDepth(playerY + 25)
 
-    this.overheadIcon = this.scene.add
-      .image(
-        playerX,
-        playerY - 72,
-        `active-icon-${this.definition.id}`,
-      )
-      .setDisplaySize(30, 30)
-      .setDepth(playerY + 27)
+      this.overheadInner = this.scene.add
+        .circle(playerX, playerY - 72, 10, color, 0.18)
+        .setStrokeStyle(1, secondary, 0.85)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setDepth(playerY + 26)
 
-    this.overheadCooldown = this.scene.add
-      .text(playerX, playerY - 50, '', {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '9px',
-        fontStyle: 'bold',
-        color: '#f8fafc',
-        stroke: '#020617',
-        strokeThickness: 3,
-      })
-      .setOrigin(0.5)
-      .setDepth(playerY + 27)
+      this.overheadIcon = this.scene.add
+        .image(
+          playerX,
+          playerY - 72,
+          `active-icon-${this.definition.id}`,
+        )
+        .setDisplaySize(30, 30)
+        .setDepth(playerY + 27)
+
+      this.overheadCooldown = this.scene.add
+        .text(playerX, playerY - 50, '', {
+          fontFamily: 'Arial, sans-serif',
+          fontSize: '9px',
+          fontStyle: 'bold',
+          color: '#f8fafc',
+          stroke: '#020617',
+          strokeThickness: 3,
+        })
+        .setOrigin(0.5)
+        .setDepth(playerY + 27)
+    }
 
     const x = this.scene.scale.width - 84
     const y = this.scene.scale.height - 86
@@ -224,10 +261,15 @@ export class ActiveAbilityCombatSystem {
     this.nextApocalypseTickAt = 0
     this.nextApocalypseVisualAt = 0
     this.nextDurationParticleAt = 0
+    this.voidDominionUntil = 0
+    this.nextVoidDominionTickAt = 0
+    this.voidDominionCenterX = 0
+    this.voidDominionCenterY = 0
     this.clearObjects(this.magneticObjects)
     this.clearObjects(this.buffObjects)
     this.clearObjects(this.shieldObjects)
     this.clearObjects(this.apocalypseObjects)
+    this.clearObjects(this.voidDominionObjects)
   }
 
   update(context: ActiveAbilityCombatContext) {
@@ -237,6 +279,7 @@ export class ActiveAbilityCombatSystem {
     this.updateRegeneration(context)
     this.updateMagneticField(context)
     this.updateApocalypse(context)
+    this.updateVoidDominion(context)
     this.updateDurationVisuals(context)
     this.updateHalo(context)
     this.updateButton(context.now)
@@ -285,6 +328,15 @@ export class ActiveAbilityCombatSystem {
       case 'eternal-apocalypse':
         this.activateEternalApocalypse(context)
         break
+      case 'supreme-starfall':
+        this.activateSupremeStarfall(context)
+        break
+      case 'void-dominion':
+        this.activateVoidDominion(context)
+        break
+      case 'last-night-verdict':
+        this.activateLastNightVerdict(context)
+        break
     }
 
     this.showActivationBanner(context)
@@ -301,6 +353,7 @@ export class ActiveAbilityCombatSystem {
       this.overheadOuter,
       this.overheadInner,
       this.overheadIcon,
+      this.overheadTitle,
       this.overheadCooldown,
       this.buttonOuter,
       this.buttonInner,
@@ -562,6 +615,133 @@ export class ActiveAbilityCombatSystem {
     context.shakeCamera(480, 0.018)
   }
 
+  private activateSupremeStarfall(context: ActiveAbilityCombatContext) {
+    const targets = context.enemies
+      .filter((enemy) => enemy.alive && enemy.sprite.active)
+      .sort((left, right) => {
+        const rankWeight = (enemy: EnemyUnit) =>
+          enemy.rank === 'boss'
+            ? 4
+            : enemy.rank === 'mini-boss'
+              ? 3
+              : enemy.isElite
+                ? 2
+                : 1
+        const rankDifference = rankWeight(right) - rankWeight(left)
+        if (rankDifference !== 0) return rankDifference
+        return right.maxHealth - left.maxHealth
+      })
+      .slice(0, 9)
+
+    if (targets.length === 0) {
+      this.createSupremeMeteor(
+        context,
+        context.playerX,
+        context.playerY - 120,
+        0,
+        null,
+      )
+    } else {
+      targets.forEach((enemy, index) => {
+        this.createSupremeMeteor(
+          context,
+          enemy.sprite.x,
+          enemy.sprite.y,
+          index,
+          enemy,
+        )
+      })
+    }
+
+    context.playSound('ultimate')
+    context.shakeCamera(420, 0.014)
+  }
+
+  private activateVoidDominion(context: ActiveAbilityCombatContext) {
+    const nearby = context.enemies
+      .filter((enemy) => enemy.alive && enemy.sprite.active)
+      .sort((left, right) => {
+        const leftDistance = Phaser.Math.Distance.Between(
+          context.playerX,
+          context.playerY,
+          left.sprite.x,
+          left.sprite.y,
+        )
+        const rightDistance = Phaser.Math.Distance.Between(
+          context.playerX,
+          context.playerY,
+          right.sprite.x,
+          right.sprite.y,
+        )
+        return leftDistance - rightDistance
+      })
+      .slice(0, 12)
+
+    if (nearby.length > 0) {
+      this.voidDominionCenterX =
+        nearby.reduce((sum, enemy) => sum + enemy.sprite.x, 0) /
+        nearby.length
+      this.voidDominionCenterY =
+        nearby.reduce((sum, enemy) => sum + enemy.sprite.y, 0) /
+        nearby.length
+    } else {
+      this.voidDominionCenterX = context.playerX
+      this.voidDominionCenterY = context.playerY
+    }
+
+    this.voidDominionUntil = context.now + 7000
+    this.nextVoidDominionTickAt = context.now
+    this.clearObjects(this.voidDominionObjects)
+
+    const x = this.voidDominionCenterX
+    const y = this.voidDominionCenterY
+    const outer = this.scene.add
+      .circle(x, y, 320, this.definition!.color, 0.045)
+      .setStrokeStyle(7, this.definition!.secondaryColor, 0.72)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(y - 8)
+    const middle = this.scene.add
+      .circle(x, y, 218, 0x6d28d9, 0.055)
+      .setStrokeStyle(4, this.definition!.color, 0.68)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(y - 7)
+    const core = this.scene.add
+      .circle(x, y, 82, 0x020617, 0.88)
+      .setStrokeStyle(5, this.definition!.secondaryColor, 0.92)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(y + 8)
+    const sigil = this.scene.add
+      .polygon(
+        x,
+        y,
+        [0, -120, 54, -54, 120, 0, 54, 54, 0, 120, -54, 54, -120, 0, -54, -54],
+        this.definition!.color,
+        0.045,
+      )
+      .setStrokeStyle(4, this.definition!.secondaryColor, 0.7)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(y + 5)
+    this.voidDominionObjects.push(outer, middle, core, sigil)
+
+    this.createBurst(x, y, 320, this.definition!.secondaryColor, 20)
+    context.playSound('field')
+    context.shakeCamera(230, 0.008)
+  }
+
+  private activateLastNightVerdict(context: ActiveAbilityCombatContext) {
+    const centerX = context.playerX
+    const centerY = context.playerY
+
+    for (let waveIndex = 0; waveIndex < 3; waveIndex++) {
+      this.scene.time.delayedCall(waveIndex * 190, () => {
+        this.damageArea(context, centerX, centerY, 440, 3.2, 35)
+        this.createVerdictWave(centerX, centerY, waveIndex)
+        context.playSound(waveIndex === 2 ? 'ultimate' : 'explosion')
+        context.shakeCamera(150 + waveIndex * 40, 0.006 + waveIndex * 0.002)
+      })
+    }
+  }
+
   private updateRegeneration(context: ActiveAbilityCombatContext) {
     if (context.now > this.regenerationUntil) return
     while (context.now >= this.nextRegenerationTickAt && this.nextRegenerationTickAt <= this.regenerationUntil) {
@@ -652,6 +832,69 @@ export class ActiveAbilityCombatSystem {
     }
   }
 
+  private updateVoidDominion(context: ActiveAbilityCombatContext) {
+    if (this.voidDominionUntil <= 0) return
+
+    if (context.now > this.voidDominionUntil) {
+      this.damageArea(
+        context,
+        this.voidDominionCenterX,
+        this.voidDominionCenterY,
+        320,
+        4.5,
+        40,
+      )
+      this.createBurst(
+        this.voidDominionCenterX,
+        this.voidDominionCenterY,
+        360,
+        this.definition!.secondaryColor,
+        30,
+      )
+      context.playSound('ultimate')
+      context.shakeCamera(320, 0.013)
+      this.voidDominionUntil = 0
+      this.clearObjects(this.voidDominionObjects)
+      return
+    }
+
+    const [outer, middle, core, sigil] = this.voidDominionObjects
+    outer
+      ?.setRotation(context.now / 1450)
+      .setScale(1 + Math.sin(context.now / 210) * 0.025)
+    middle
+      ?.setRotation(-context.now / 960)
+      .setScale(1 + Math.cos(context.now / 180) * 0.04)
+    core
+      ?.setRotation(context.now / 560)
+      .setScale(0.9 + Math.sin(context.now / 120) * 0.1)
+    sigil
+      ?.setRotation(-context.now / 1200)
+      .setScale(0.96 + Math.cos(context.now / 230) * 0.04)
+
+    while (
+      context.now >= this.nextVoidDominionTickAt &&
+      this.nextVoidDominionTickAt <= this.voidDominionUntil
+    ) {
+      this.damageArea(
+        context,
+        this.voidDominionCenterX,
+        this.voidDominionCenterY,
+        320,
+        1.5,
+        40,
+      )
+      this.nextVoidDominionTickAt += 700
+      this.createBurst(
+        this.voidDominionCenterX,
+        this.voidDominionCenterY,
+        240,
+        this.definition!.color,
+        12,
+      )
+    }
+  }
+
   private updateDurationVisuals(context: ActiveAbilityCombatContext) {
     if (context.now > this.overdriveUntil) {
       this.clearObjects(this.buffObjects)
@@ -696,6 +939,20 @@ export class ActiveAbilityCombatSystem {
     const y = context.playerY - 72
     const depth = context.playerY + 28
     const pulse = 1 + Math.sin(context.now / 180) * 0.06
+
+    if (this.definition?.honorTitle) {
+      this.overheadTitle
+        ?.setPosition(context.playerX, y - 8)
+        .setDepth(depth + 2)
+        .setScale(ready ? 1 + Math.sin(context.now / 220) * 0.035 : 0.98)
+        .setAlpha(ready ? 1 : 0.58)
+      this.overheadCooldown
+        ?.setPosition(context.playerX, y + 11)
+        .setDepth(depth + 2)
+        .setText(remaining > 0 ? `HỒI ${remaining}s` : 'SẴN SÀNG')
+        .setAlpha(ready ? 0.9 : 0.68)
+      return
+    }
 
     this.overheadOuter
       ?.setPosition(context.playerX, y)
@@ -750,9 +1007,11 @@ export class ActiveAbilityCombatSystem {
     radius: number,
     multiplier: number,
     maximumTargets = Number.POSITIVE_INFINITY,
+    excludedEnemy: EnemyUnit | null = null,
   ) {
     const targets = context.enemies
       .filter((enemy) => {
+        if (enemy === excludedEnemy) return false
         if (!enemy.alive || !enemy.sprite.active) return false
         return Phaser.Math.Distance.Between(x, y, enemy.sprite.x, enemy.sprite.y) <= radius
       })
@@ -765,6 +1024,158 @@ export class ActiveAbilityCombatSystem {
 
     const damage = Math.max(1, Math.round(context.stats.attackDamage * multiplier))
     for (const enemy of targets) context.damageEnemy(enemy, damage, false)
+  }
+
+  private createSupremeMeteor(
+    context: ActiveAbilityCombatContext,
+    targetX: number,
+    targetY: number,
+    index: number,
+    target: EnemyUnit | null,
+  ) {
+    const delay = index * 95
+    const warning = this.scene.add
+      .circle(targetX, targetY, 54, this.definition!.color, 0.07)
+      .setStrokeStyle(4, this.definition!.secondaryColor, 0.9)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(targetY + 32)
+    const rune = this.scene.add
+      .polygon(
+        targetX,
+        targetY,
+        [0, -40, 15, -15, 40, 0, 15, 15, 0, 40, -15, 15, -40, 0, -15, -15],
+        this.definition!.color,
+        0.04,
+      )
+      .setStrokeStyle(2, this.definition!.secondaryColor, 0.75)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(targetY + 33)
+    const meteor = this.scene.add
+      .image(targetX - 150, targetY - 430, 'skill-meteor')
+      .setScale(0.82)
+      .setTint(this.definition!.secondaryColor)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(targetY + 40)
+      .setAlpha(0)
+
+    this.scene.tweens.add({
+      targets: [warning, rune],
+      scale: 1.25,
+      alpha: 0.22,
+      yoyo: true,
+      repeat: 1,
+      delay,
+      duration: 130,
+    })
+    this.scene.tweens.add({
+      targets: meteor,
+      alpha: 1,
+      x: targetX,
+      y: targetY,
+      rotation: 1.2,
+      delay: delay + 80,
+      duration: 310,
+      ease: 'Cubic.In',
+      onComplete: () => {
+        meteor.destroy()
+        warning.destroy()
+        rune.destroy()
+
+        const impactX = target?.alive ? target.sprite.x : targetX
+        const impactY = target?.alive ? target.sprite.y : targetY
+        if (target?.alive) {
+          context.damageEnemy(
+            target,
+            Math.max(1, Math.round(context.stats.attackDamage * 7.5)),
+            true,
+          )
+        }
+        this.damageArea(
+          context,
+          impactX,
+          impactY,
+          120,
+          1.8,
+          10,
+          target,
+        )
+        this.createBurst(
+          impactX,
+          impactY,
+          150,
+          this.definition!.secondaryColor,
+          18,
+        )
+        this.createLightningStrike(
+          impactX + Phaser.Math.Between(-40, 40),
+          impactY - 360,
+          impactX,
+          impactY,
+        )
+      },
+    })
+  }
+
+  private createVerdictWave(x: number, y: number, waveIndex: number) {
+    const radius = 180 + waveIndex * 74
+    const ring = this.scene.add
+      .circle(x, y, radius, this.definition!.color, 0.035)
+      .setStrokeStyle(8 - waveIndex, this.definition!.secondaryColor, 0.88)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(y + 46 + waveIndex)
+      .setScale(0.45)
+    const reverseRing = this.scene.add
+      .circle(x, y, radius * 0.78, this.definition!.secondaryColor, 0.025)
+      .setStrokeStyle(4, this.definition!.color, 0.8)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(y + 45 + waveIndex)
+      .setScale(0.4)
+
+    for (let slashIndex = 0; slashIndex < 4; slashIndex++) {
+      const angle = (Math.PI * slashIndex) / 4 + waveIndex * 0.38
+      const length = radius * 1.55
+      const slash = this.scene.add
+        .line(
+          0,
+          0,
+          x - Math.cos(angle) * length,
+          y - Math.sin(angle) * length * 0.56,
+          x + Math.cos(angle) * length,
+          y + Math.sin(angle) * length * 0.56,
+          slashIndex % 2 === 0
+            ? this.definition!.color
+            : this.definition!.secondaryColor,
+          0.75,
+        )
+        .setOrigin(0, 0)
+        .setLineWidth(12, 2)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setDepth(y + 50 + slashIndex)
+
+      this.scene.tweens.add({
+        targets: slash,
+        alpha: 0,
+        scaleX: 1.12,
+        duration: 420,
+        ease: 'Quad.Out',
+        onComplete: () => slash.destroy(),
+      })
+    }
+
+    this.scene.tweens.add({
+      targets: [ring, reverseRing],
+      scale: 1.42,
+      alpha: 0,
+      rotation: waveIndex % 2 === 0 ? 0.7 : -0.7,
+      duration: 520,
+      ease: 'Cubic.Out',
+      onComplete: () => {
+        ring.destroy()
+        reverseRing.destroy()
+      },
+    })
+
+    this.createBurst(x, y, 440, this.definition!.color, 20)
   }
 
   private createBulletCrownVisual(x: number, y: number) {
@@ -1340,11 +1751,13 @@ export class ActiveAbilityCombatSystem {
     this.clearObjects(this.buffObjects)
     this.clearObjects(this.shieldObjects)
     this.clearObjects(this.apocalypseObjects)
+    this.clearObjects(this.voidDominionObjects)
 
     const objects = [
       this.overheadOuter,
       this.overheadInner,
       this.overheadIcon,
+      this.overheadTitle,
       this.overheadCooldown,
       this.buttonOuter,
       this.buttonInner,
@@ -1358,6 +1771,7 @@ export class ActiveAbilityCombatSystem {
     this.overheadOuter = null
     this.overheadInner = null
     this.overheadIcon = null
+    this.overheadTitle = null
     this.overheadCooldown = null
     this.buttonOuter = null
     this.buttonInner = null

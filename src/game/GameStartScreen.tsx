@@ -16,6 +16,7 @@ import { OnlineLeaderboardSystem } from './systems/OnlineLeaderboardSystem'
 import { StartingProtocolSystem } from './systems/StartingProtocolSystem'
 import { PlayerSkinSystem } from './systems/PlayerSkinSystem'
 import { ActiveAbilityShopSystem } from './systems/ActiveAbilityShopSystem'
+import { RewardUnlockSystem } from './systems/RewardUnlockSystem'
 import {
   PlayerProfileSystem,
   type PlayerProfileBootstrapStatus,
@@ -128,6 +129,10 @@ export default function GameStartScreen({ onStart }: GameStartScreenProps) {
     () => new ActiveAbilityShopSystem(),
     [],
   )
+  const rewardUnlockSystem = useMemo(
+    () => new RewardUnlockSystem(),
+    [],
+  )
 
   const playerProfileSystem = useMemo(
     () => new PlayerProfileSystem(),
@@ -178,6 +183,9 @@ export default function GameStartScreen({ onStart }: GameStartScreenProps) {
     activeAbilityShopSystem.getSnapshot(),
   )
   const [abilityNotice, setAbilityNotice] = useState('')
+  const [rewardNotice, setRewardNotice] = useState(
+    'Đang đồng bộ phần thưởng độc quyền theo ID hồ sơ...',
+  )
   const [activeLoadoutTab, setActiveLoadoutTab] = useState<
     'skins' | 'abilities' | 'missions'
   >('skins')
@@ -239,6 +247,18 @@ export default function GameStartScreen({ onStart }: GameStartScreenProps) {
         onlineLeaderboard.setDisplayName(result.profile.displayName)
       }
 
+      if (result.status === 'ready') {
+        const rewardResult = await rewardUnlockSystem.refreshFromCloud()
+        if (cancelled) {
+          return
+        }
+        setRewardNotice(rewardResult.message)
+      } else if (result.status === 'ready-offline') {
+        setRewardNotice('Đang offline. Quà độc quyền sẽ đồng bộ khi có mạng.')
+      } else {
+        setRewardNotice('Quà độc quyền chỉ đồng bộ sau khi hồ sơ sẵn sàng.')
+      }
+
       refreshProgressSnapshots()
     }
 
@@ -261,6 +281,7 @@ export default function GameStartScreen({ onStart }: GameStartScreenProps) {
     onlineLeaderboard,
     playerProfileSystem,
     playerSkinSystem,
+    rewardUnlockSystem,
   ])
 
   useEffect(() => {
@@ -376,6 +397,46 @@ export default function GameStartScreen({ onStart }: GameStartScreenProps) {
     }
   }, [activeAbilityShopSystem, dailyChallengeSystem, playerSkinSystem])
 
+  useEffect(() => {
+    if (profileStatus !== 'ready') {
+      return
+    }
+
+    let cancelled = false
+
+    const refreshRewards = async () => {
+      const result = await rewardUnlockSystem.refreshFromCloud()
+      if (cancelled) {
+        return
+      }
+
+      setRewardNotice(result.message)
+      setSkinSnapshot(playerSkinSystem.getSnapshot())
+      setAbilitySnapshot(activeAbilityShopSystem.getSnapshot())
+    }
+
+    const intervalId = window.setInterval(() => {
+      void refreshRewards()
+    }, 60_000)
+
+    const handleOnline = () => {
+      void refreshRewards()
+    }
+
+    window.addEventListener('online', handleOnline)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(intervalId)
+      window.removeEventListener('online', handleOnline)
+    }
+  }, [
+    activeAbilityShopSystem,
+    playerSkinSystem,
+    profileStatus,
+    rewardUnlockSystem,
+  ])
+
   const isProfileLocked =
     profileStatus === 'ready' ||
     profileStatus === 'ready-offline' ||
@@ -434,6 +495,13 @@ export default function GameStartScreen({ onStart }: GameStartScreenProps) {
       return
     }
 
+    if (result.reason === 'exclusive-locked') {
+      setSkinNotice(
+        `${result.definition.name} là trang phục độc quyền. Admin phải mở cho đúng ID hồ sơ trên Supabase.`,
+      )
+      return
+    }
+
     setSkinNotice('Không thể chọn skin này.')
   }
 
@@ -470,6 +538,13 @@ export default function GameStartScreen({ onStart }: GameStartScreenProps) {
     if (result.reason === 'insufficient') {
       setAbilityNotice(
         `Chưa đủ Mảnh Đêm. Cần thêm ${formatScore(result.missing)}.`,
+      )
+      return
+    }
+
+    if (result.reason === 'exclusive-locked') {
+      setAbilityNotice(
+        `${result.definition.name} là kỹ năng độc quyền. Admin phải mở cho đúng ID hồ sơ trên Supabase.`,
       )
       return
     }
@@ -591,6 +666,10 @@ export default function GameStartScreen({ onStart }: GameStartScreenProps) {
       }
 
       setProfileStatus('ready')
+      const rewardResult = await rewardUnlockSystem.refreshFromCloud()
+      setRewardNotice(rewardResult.message)
+      setSkinSnapshot(playerSkinSystem.getSnapshot())
+      setAbilitySnapshot(activeAbilityShopSystem.getSnapshot())
       setRecoveryCode(result.recoveryCode)
       setRecoveryAcknowledged(
         playerProfileSystem.isRecoveryCodeAcknowledged(),
@@ -936,7 +1015,7 @@ export default function GameStartScreen({ onStart }: GameStartScreenProps) {
             onClick={() => setActiveLoadoutTab('skins')}
           >
             <span>CHIẾN GIÁP</span>
-            <small>10 skin</small>
+            <small>{skinSnapshot.totalCount} skin</small>
           </button>
           <button
             type="button"
@@ -944,7 +1023,7 @@ export default function GameStartScreen({ onStart }: GameStartScreenProps) {
             onClick={() => setActiveLoadoutTab('abilities')}
           >
             <span>KỸ NĂNG</span>
-            <small>10 kỹ năng</small>
+            <small>{abilitySnapshot.totalCount} kỹ năng</small>
           </button>
           <button
             type="button"
@@ -976,9 +1055,14 @@ export default function GameStartScreen({ onStart }: GameStartScreenProps) {
 
               {skinSnapshot.testMode && (
                 <div className="skin-test-mode-banner">
-                  TEST MODE • ĐÃ MỞ TOÀN BỘ 10 SKIN • KHÔNG TRỪ MẢNH ĐÊM
+                  TEST MODE • ĐÃ MỞ TOÀN BỘ {skinSnapshot.totalCount} SKIN • KHÔNG TRỪ MẢNH ĐÊM
                 </div>
               )}
+
+              <div className="exclusive-reward-sync-note">
+                <span>PHẦN THƯỞNG ID</span>
+                <strong>{rewardNotice}</strong>
+              </div>
 
               <div className="skin-shop-grid">
                 {skinSnapshot.skins.map((skin) => {
@@ -992,7 +1076,7 @@ export default function GameStartScreen({ onStart }: GameStartScreenProps) {
                         skin.selected ? ' is-selected' : ''
                       }${skin.unlocked ? '' : ' is-locked'}${
                         skin.canAfford ? ' can-afford' : ''
-                      }`}
+                      }${definition.rewardOnly ? ' is-exclusive' : ''}`}
                       type="button"
                       aria-pressed={skin.selected}
                       onClick={() => handleSkinSelect(definition.id)}
@@ -1023,11 +1107,15 @@ export default function GameStartScreen({ onStart }: GameStartScreenProps) {
                       <em>
                         {skin.selected
                           ? 'ĐANG DÙNG'
-                          : skin.testUnlocked
-                            ? `THỬ NGAY • GIÁ ${formatScore(definition.price)}`
-                            : skin.unlocked
-                              ? 'TRANG BỊ'
-                              : `MỞ KHÓA • ${formatScore(definition.price)}`}
+                          : definition.rewardOnly
+                            ? skin.unlocked
+                              ? 'QUÀ ĐỘC QUYỀN • TRANG BỊ'
+                              : 'KHÓA ĐỘC QUYỀN • CHỜ TRAO THEO ID'
+                            : skin.testUnlocked
+                              ? `THỬ NGAY • GIÁ ${formatScore(definition.price)}`
+                              : skin.unlocked
+                                ? 'TRANG BỊ'
+                                : `MỞ KHÓA • ${formatScore(definition.price)}`}
                       </em>
                     </button>
                   )
@@ -1057,9 +1145,14 @@ export default function GameStartScreen({ onStart }: GameStartScreenProps) {
 
               {abilitySnapshot.testMode && (
                 <div className="ability-test-mode-banner">
-                  TEST MODE • ĐÃ MỞ TOÀN BỘ 10 KỸ NĂNG • KHÔNG TRỪ MẢNH ĐÊM
+                  TEST MODE • ĐÃ MỞ TOÀN BỘ {abilitySnapshot.totalCount} KỸ NĂNG • KHÔNG TRỪ MẢNH ĐÊM
                 </div>
               )}
+
+              <div className="exclusive-reward-sync-note">
+                <span>PHẦN THƯỞNG ID</span>
+                <strong>{rewardNotice}</strong>
+              </div>
 
               <div className="ability-shop-grid">
                 {abilitySnapshot.abilities.map((ability) => {
@@ -1072,7 +1165,7 @@ export default function GameStartScreen({ onStart }: GameStartScreenProps) {
                         ability.selected ? ' is-selected' : ''
                       }${ability.unlocked ? '' : ' is-locked'}${
                         ability.canAfford ? ' can-afford' : ''
-                      }`}
+                      }${definition.rewardOnly ? ' is-exclusive' : ''}`}
                       type="button"
                       aria-pressed={ability.selected}
                       onClick={() => handleAbilitySelect(definition.id)}
@@ -1097,18 +1190,26 @@ export default function GameStartScreen({ onStart }: GameStartScreenProps) {
                         </span>
                         <span className="ability-card-meta">
                           <em>HỒI {definition.cooldownSeconds}s</em>
-                          <strong>GIÁ {formatScore(definition.price)}</strong>
+                          <strong>
+                            {definition.rewardOnly
+                              ? 'QUÀ THEO ID'
+                              : `GIÁ ${formatScore(definition.price)}`}
+                          </strong>
                         </span>
                       </span>
 
                       <span className="ability-card-action">
                         {ability.selected
                           ? 'ĐANG TRANG BỊ'
-                          : ability.testUnlocked
-                            ? 'THỬ NGAY'
-                            : ability.unlocked
-                              ? 'TRANG BỊ'
-                              : `MỞ KHÓA • ${formatScore(definition.price)}`}
+                          : definition.rewardOnly
+                            ? ability.unlocked
+                              ? 'QUÀ ĐỘC QUYỀN • TRANG BỊ'
+                              : 'KHÓA ĐỘC QUYỀN • CHỜ TRAO THEO ID'
+                            : ability.testUnlocked
+                              ? 'THỬ NGAY'
+                              : ability.unlocked
+                                ? 'TRANG BỊ'
+                                : `MỞ KHÓA • ${formatScore(definition.price)}`}
                       </span>
                     </button>
                   )

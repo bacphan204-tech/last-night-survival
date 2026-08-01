@@ -9,6 +9,7 @@ import {
 } from '../data/activeAbilities'
 import { DailyChallengeSystem } from './DailyChallengeSystem'
 import { notifyCloudProgressChanged } from './PlayerProfileSystem'
+import { hasRewardAbilityUnlock } from './RewardUnlockSystem'
 
 const STORAGE_KEY = 'last-night-survival:active-abilities:v1'
 const STORAGE_VERSION = 1
@@ -39,7 +40,13 @@ export type ActiveAbilitySnapshot = {
 
 export type ActiveAbilityActionResult = {
   success: boolean
-  reason: 'selected' | 'test-selected' | 'unlocked' | 'insufficient' | 'invalid'
+  reason:
+    | 'selected'
+    | 'test-selected'
+    | 'unlocked'
+    | 'insufficient'
+    | 'exclusive-locked'
+    | 'invalid'
   spent: number
   missing: number
   definition: ActiveAbilityDefinition | null
@@ -57,6 +64,24 @@ function createDefaultState(): ActiveAbilityState {
   }
 }
 
+function isRegularUnlocked(
+  state: ActiveAbilityState,
+  definition: ActiveAbilityDefinition,
+) {
+  return !definition.rewardOnly && state.unlockedIds.includes(definition.id)
+}
+
+function isAbilityAvailable(
+  state: ActiveAbilityState,
+  definition: ActiveAbilityDefinition,
+) {
+  if (definition.rewardOnly) {
+    return hasRewardAbilityUnlock(definition.id)
+  }
+
+  return ACTIVE_ABILITY_TEST_MODE || isRegularUnlocked(state, definition)
+}
+
 export class ActiveAbilityShopSystem {
   private memoryState = createDefaultState()
   private readonly dailyChallengeSystem = new DailyChallengeSystem()
@@ -65,24 +90,35 @@ export class ActiveAbilityShopSystem {
     const state = this.loadState()
     const totalNightMarks = this.dailyChallengeSystem.getTotalNightMarks()
     const selectedId = this.resolveSelectedId(state)
-    const unlockedSet = new Set(state.unlockedIds)
+
+    const abilities = ACTIVE_ABILITY_DEFINITIONS.map((definition) => {
+      const regularUnlocked = isRegularUnlocked(state, definition)
+      const rewardUnlocked =
+        definition.rewardOnly && hasRewardAbilityUnlock(definition.id)
+      const testUnlocked =
+        ACTIVE_ABILITY_TEST_MODE &&
+        !definition.rewardOnly &&
+        !regularUnlocked
+      const unlocked = regularUnlocked || rewardUnlocked || testUnlocked
+
+      return {
+        definition,
+        unlocked,
+        selected: selectedId === definition.id,
+        canAfford:
+          unlocked ||
+          (!definition.rewardOnly && totalNightMarks >= definition.price),
+        testUnlocked,
+      }
+    })
 
     return {
       selectedId,
-      unlockedCount: state.unlockedIds.length,
+      unlockedCount: abilities.filter((ability) => ability.unlocked).length,
       totalCount: ACTIVE_ABILITY_DEFINITIONS.length,
       totalNightMarks,
       testMode: ACTIVE_ABILITY_TEST_MODE,
-      abilities: ACTIVE_ABILITY_DEFINITIONS.map((definition) => {
-        const unlocked = unlockedSet.has(definition.id)
-        return {
-          definition,
-          unlocked,
-          selected: selectedId === definition.id,
-          canAfford: totalNightMarks >= definition.price,
-          testUnlocked: ACTIVE_ABILITY_TEST_MODE && !unlocked,
-        }
-      }),
+      abilities,
     }
   }
 
@@ -91,6 +127,32 @@ export class ActiveAbilityShopSystem {
     if (!definition) return this.invalidResult()
 
     const state = this.loadState()
+
+    if (definition.rewardOnly) {
+      if (!hasRewardAbilityUnlock(id)) {
+        return {
+          success: false,
+          reason: 'exclusive-locked',
+          spent: 0,
+          missing: 0,
+          definition,
+          snapshot: this.getSnapshot(),
+        }
+      }
+
+      state.selectedId = id
+      state.updatedAt = Date.now()
+      this.persistState(state)
+      return {
+        success: true,
+        reason: 'selected',
+        spent: 0,
+        missing: 0,
+        definition,
+        snapshot: this.getSnapshot(),
+      }
+    }
+
     const unlockedSet = new Set(state.unlockedIds)
 
     if (ACTIVE_ABILITY_TEST_MODE) {
@@ -121,7 +183,9 @@ export class ActiveAbilityShopSystem {
       }
     }
 
-    const purchase = this.dailyChallengeSystem.spendNightMarks(definition.price)
+    const purchase = this.dailyChallengeSystem.spendNightMarks(
+      definition.price,
+    )
     if (!purchase.success) {
       return {
         success: false,
@@ -158,15 +222,15 @@ export class ActiveAbilityShopSystem {
     }
 
     if (!isActiveAbilityId(id)) return this.resolveSelectedId(state)
-
-    if (ACTIVE_ABILITY_TEST_MODE || state.unlockedIds.includes(id)) {
-      state.selectedId = id
-      state.updatedAt = Date.now()
-      this.persistState(state)
-      return id
+    const definition = getActiveAbilityDefinition(id)
+    if (!definition || !isAbilityAvailable(state, definition)) {
+      return this.resolveSelectedId(state)
     }
 
-    return this.resolveSelectedId(state)
+    state.selectedId = id
+    state.updatedAt = Date.now()
+    this.persistState(state)
+    return id
   }
 
   getSelectedId() {
@@ -175,22 +239,23 @@ export class ActiveAbilityShopSystem {
 
   resolveId(id: ActiveAbilityId | string | null | undefined) {
     const state = this.loadState()
-    if (
-      isActiveAbilityId(id) &&
-      (ACTIVE_ABILITY_TEST_MODE || state.unlockedIds.includes(id))
-    ) {
-      return id
+    if (isActiveAbilityId(id)) {
+      const definition = getActiveAbilityDefinition(id)
+      if (definition && isAbilityAvailable(state, definition)) {
+        return id
+      }
     }
     return this.resolveSelectedId(state)
   }
 
-  private resolveSelectedId(state: ActiveAbilityState): ActiveAbilityId | null {
-    if (
-      state.selectedId &&
-      isActiveAbilityId(state.selectedId) &&
-      (ACTIVE_ABILITY_TEST_MODE || state.unlockedIds.includes(state.selectedId))
-    ) {
-      return state.selectedId
+  private resolveSelectedId(
+    state: ActiveAbilityState,
+  ): ActiveAbilityId | null {
+    if (state.selectedId && isActiveAbilityId(state.selectedId)) {
+      const definition = getActiveAbilityDefinition(state.selectedId)
+      if (definition && isAbilityAvailable(state, definition)) {
+        return state.selectedId
+      }
     }
 
     return ACTIVE_ABILITY_TEST_MODE ? DEFAULT_TEST_ACTIVE_ABILITY_ID : null
@@ -214,7 +279,10 @@ export class ActiveAbilityShopSystem {
 
       const value = JSON.parse(raw) as Partial<ActiveAbilityState>
       const unlockedIds = Array.isArray(value.unlockedIds)
-        ? value.unlockedIds.filter(isActiveAbilityId)
+        ? value.unlockedIds.filter((id): id is ActiveAbilityId => {
+            if (!isActiveAbilityId(id)) return false
+            return getActiveAbilityDefinition(id)?.rewardOnly !== true
+          })
         : []
       const selectedId = isActiveAbilityId(value.selectedId)
         ? value.selectedId
@@ -224,7 +292,10 @@ export class ActiveAbilityShopSystem {
         version: STORAGE_VERSION,
         unlockedIds: Array.from(new Set(unlockedIds)),
         selectedId,
-        updatedAt: typeof value.updatedAt === 'number' ? value.updatedAt : Date.now(),
+        updatedAt:
+          typeof value.updatedAt === 'number'
+            ? value.updatedAt
+            : Date.now(),
       }
       return this.memoryState
     } catch {
@@ -233,9 +304,21 @@ export class ActiveAbilityShopSystem {
   }
 
   private persistState(state: ActiveAbilityState) {
-    this.memoryState = { ...state, unlockedIds: [...state.unlockedIds] }
+    const safeUnlockedIds = state.unlockedIds.filter((id) => {
+      const definition = getActiveAbilityDefinition(id)
+      return definition?.rewardOnly !== true
+    })
+
+    this.memoryState = {
+      ...state,
+      unlockedIds: [...safeUnlockedIds],
+    }
+
     try {
-      globalThis.localStorage?.setItem(STORAGE_KEY, JSON.stringify(this.memoryState))
+      globalThis.localStorage?.setItem(
+        STORAGE_KEY,
+        JSON.stringify(this.memoryState),
+      )
       notifyCloudProgressChanged()
     } catch {
       // localStorage có thể bị chặn; trạng thái RAM vẫn hoạt động trong phiên hiện tại.

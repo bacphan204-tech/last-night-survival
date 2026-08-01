@@ -1326,6 +1326,9 @@ function createActiveAbilityIconTextures(scene: Phaser.Scene) {
     'rift-step',
     'heaven-judgment',
     'eternal-apocalypse',
+    'supreme-starfall',
+    'void-dominion',
+    'last-night-verdict',
   ] as const
 
   for (const id of ids) {
@@ -1390,6 +1393,9 @@ function getActiveAbilityIconColor(id: string) {
     'rift-step': 0x8b5cf6,
     'heaven-judgment': 0xfacc15,
     'eternal-apocalypse': 0xf43f5e,
+    'supreme-starfall': 0xa855f7,
+    'void-dominion': 0x2563eb,
+    'last-night-verdict': 0xdc2626,
   }
   return colors[id] ?? 0x67e8f9
 }
@@ -1594,6 +1600,37 @@ function drawActiveAbilityGlyph(
       graphics.fillCircle(36, 49, 13)
       graphics.fillStyle(color, 0.95)
       graphics.fillCircle(31, 45, 4)
+      break
+    case 'supreme-starfall':
+      graphics.fillStyle(0xfef08a, 1)
+      fillPolygonPath(graphics, [36, 8, 41, 25, 59, 25, 44, 36, 50, 55, 36, 44, 22, 55, 28, 36, 13, 25, 31, 25])
+      graphics.lineStyle(3, color, 0.92)
+      graphics.lineBetween(16, 14, 29, 28)
+      graphics.lineBetween(10, 25, 24, 34)
+      break
+    case 'void-dominion':
+      graphics.lineStyle(5, 0x67e8f9, 1)
+      graphics.strokeCircle(36, 36, 23)
+      graphics.lineStyle(3, color, 1)
+      graphics.strokeCircle(36, 36, 14)
+      graphics.fillStyle(0x020617, 1)
+      graphics.fillCircle(36, 36, 10)
+      graphics.fillStyle(0x67e8f9, 1)
+      graphics.fillCircle(36, 36, 4)
+      graphics.lineStyle(2, 0xffffff, 0.78)
+      graphics.lineBetween(36, 8, 36, 20)
+      graphics.lineBetween(36, 52, 36, 64)
+      graphics.lineBetween(8, 36, 20, 36)
+      graphics.lineBetween(52, 36, 64, 36)
+      break
+    case 'last-night-verdict':
+      graphics.lineStyle(8, color, 1)
+      graphics.lineBetween(17, 17, 55, 55)
+      graphics.lineBetween(55, 17, 17, 55)
+      graphics.lineStyle(3, 0xfde047, 1)
+      graphics.lineBetween(14, 27, 45, 58)
+      graphics.lineBetween(58, 27, 27, 58)
+      graphics.strokeCircle(36, 36, 25)
       break
   }
 }

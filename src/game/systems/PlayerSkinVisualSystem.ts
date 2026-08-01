@@ -16,6 +16,11 @@ export class PlayerSkinVisualSystem {
   private auraSigil!: Phaser.GameObjects.Polygon
   private auraNodeLeft!: Phaser.GameObjects.Arc
   private auraNodeRight!: Phaser.GameObjects.Arc
+  private exclusiveAuraObjects: Array<
+    | Phaser.GameObjects.Ellipse
+    | Phaser.GameObjects.Arc
+    | Phaser.GameObjects.Polygon
+  > = []
   private body!: Phaser.GameObjects.Graphics
   private facing = 1
   private defeated = false
@@ -99,6 +104,8 @@ export class PlayerSkinVisualSystem {
       .setBlendMode(Phaser.BlendModes.ADD)
       .setDepth(y + 1)
 
+    this.createExclusiveAura(x, y)
+
     this.lastX = x
     this.lastY = y
 
@@ -173,6 +180,8 @@ export class PlayerSkinVisualSystem {
       .setDepth(depth + (Math.sin(orbitAngle + Math.PI) > 0 ? 2 : -1))
       .setAlpha(this.defeated ? 0.05 : 0.62 + this.definition.effectTier * 0.08)
 
+    this.updateExclusiveAura(now, x, y, depth)
+
     this.character
       .setPosition(x, y - bob)
       .setDepth(depth + 2)
@@ -192,8 +201,14 @@ export class PlayerSkinVisualSystem {
     this.lastY = y
 
     if (!this.defeated && this.definition.effectTier > 0 && now >= this.nextAuraParticleAt) {
-      this.nextAuraParticleAt = now + Math.max(85, 210 - this.definition.effectTier * 35)
+      this.nextAuraParticleAt = now + Math.max(
+        this.definition.rewardOnly ? 48 : 85,
+        210 - this.definition.effectTier * 35,
+      )
       this.emitAuraParticle(x, y)
+      if (this.definition.rewardOnly) {
+        this.emitAuraParticle(x, y)
+      }
     }
   }
 
@@ -230,6 +245,9 @@ export class PlayerSkinVisualSystem {
     this.auraSigil.setAlpha(0.03)
     this.auraNodeLeft.setAlpha(0.04)
     this.auraNodeRight.setAlpha(0.04)
+    for (const object of this.exclusiveAuraObjects) {
+      object.setAlpha(0.04)
+    }
   }
 
   decorateProjectile(
@@ -326,6 +344,86 @@ export class PlayerSkinVisualSystem {
         onComplete: () => particle.destroy(),
       })
     }
+  }
+
+  private createExclusiveAura(x: number, y: number) {
+    const skin = this.definition
+    if (!skin.rewardOnly || !skin.auraStyle) {
+      return
+    }
+
+    const outer = this.scene.add
+      .ellipse(x, y + 17, 168, 60, skin.darkColor, 0)
+      .setStrokeStyle(5, skin.auraColor, 0.88)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(y - 2)
+
+    const inner = this.scene.add
+      .ellipse(x, y + 17, 116, 42, skin.darkColor, 0)
+      .setStrokeStyle(3, skin.accentColor, 0.78)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(y - 1)
+
+    const radius = skin.auraStyle === 'void' ? 68 : 61
+    const points =
+      skin.auraStyle === 'royal'
+        ? [0, -radius, 18, -24, 54, -34, 30, 0, 56, 34, 18, 24, 0, radius, -18, 24, -56, 34, -30, 0, -54, -34, -18, -24]
+        : skin.auraStyle === 'nightfire'
+          ? [0, -radius, 14, -30, 34, -52, 31, -16, 60, 0, 30, 16, 36, 52, 12, 30, 0, radius, -12, 30, -36, 52, -30, 16, -60, 0, -31, -16, -34, -52, -14, -30]
+          : [0, -radius, 42, -42, radius, 0, 42, 42, 0, radius, -42, 42, -radius, 0, -42, -42]
+
+    const sigil = this.scene.add
+      .polygon(x, y + 17, points, skin.auraColor, 0.035)
+      .setStrokeStyle(3, skin.accentColor, 0.72)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(y)
+
+    const halo = this.scene.add
+      .circle(x, y - 7, 55, skin.auraColor, 0.045)
+      .setStrokeStyle(4, skin.eyeColor, 0.46)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(y - 3)
+
+    this.exclusiveAuraObjects.push(outer, inner, sigil, halo)
+  }
+
+  private updateExclusiveAura(
+    now: number,
+    x: number,
+    y: number,
+    depth: number,
+  ) {
+    if (this.exclusiveAuraObjects.length === 0) {
+      return
+    }
+
+    const [outer, inner, sigil, halo] = this.exclusiveAuraObjects
+    const pulse = 1 + Math.sin(now / 155) * 0.055
+
+    outer
+      ?.setPosition(x, y + 17)
+      .setDepth(depth - 2)
+      .setRotation(now / 980)
+      .setScale(pulse)
+      .setAlpha(this.defeated ? 0.04 : 0.86)
+    inner
+      ?.setPosition(x, y + 17)
+      .setDepth(depth - 1)
+      .setRotation(-now / 720)
+      .setScale(1 + Math.cos(now / 185) * 0.05)
+      .setAlpha(this.defeated ? 0.03 : 0.8)
+    sigil
+      ?.setPosition(x, y + 17)
+      .setDepth(depth)
+      .setRotation(now / 1350)
+      .setScale(1 + Math.sin(now / 240) * 0.045)
+      .setAlpha(this.defeated ? 0.03 : 0.66)
+    halo
+      ?.setPosition(x, y - 7)
+      .setDepth(depth - 3)
+      .setRotation(-now / 1150)
+      .setScale(1 + Math.sin(now / 175) * 0.08)
+      .setAlpha(this.defeated ? 0.02 : 0.34)
   }
 
   private emitAuraParticle(x: number, y: number) {
@@ -493,6 +591,30 @@ export class PlayerSkinVisualSystem {
       g.fillStyle(skin.accentColor, 0.95)
       g.fillTriangle(-10, -40, -5, -55, 0, -41)
       g.fillTriangle(0, -41, 5, -57, 10, -40)
+    }
+    if (skin.archetype === 'champion') {
+      g.fillStyle(skin.accentColor, 1)
+      g.fillTriangle(-15, -40, -10, -59, -3, -42)
+      g.fillTriangle(-6, -42, 0, -64, 6, -42)
+      g.fillTriangle(3, -42, 10, -59, 15, -40)
+      g.lineStyle(3, skin.secondaryColor, 0.92)
+      g.strokeCircle(0, -4, 14)
+    }
+    if (skin.archetype === 'astral') {
+      g.fillStyle(skin.accentColor, 0.3)
+      g.fillTriangle(-19, -17, -48, -6, -24, 13)
+      g.fillTriangle(19, -17, 48, -6, 24, 13)
+      g.lineStyle(3, skin.accentColor, 0.82)
+      g.lineBetween(-24, -10, -46, -2)
+      g.lineBetween(24, -10, 46, -2)
+    }
+    if (skin.archetype === 'overlord') {
+      g.fillStyle(skin.accentColor, 0.96)
+      g.fillTriangle(-15, -39, -22, -58, -6, -44)
+      g.fillTriangle(15, -39, 22, -58, 6, -44)
+      g.lineStyle(3, skin.secondaryColor, 0.88)
+      g.lineBetween(-18, -13, 0, 13)
+      g.lineBetween(18, -13, 0, 13)
     }
   }
 }
