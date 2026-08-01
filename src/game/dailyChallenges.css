@@ -1,0 +1,213 @@
+.daily-missions-panel {
+  min-width: 0;
+}
+
+.daily-mission-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.daily-mission-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 16px;
+  padding: 12px;
+  overflow: hidden;
+  border: 1px solid rgb(80 105 145 / 26%);
+  border-radius: 12px;
+  background:
+    linear-gradient(145deg, rgb(10 17 34 / 93%), rgb(4 9 20 / 94%));
+}
+
+.daily-mission-row::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(#38bdf8, #6366f1);
+  opacity: 0.72;
+}
+
+.daily-mission-row.is-completed {
+  border-color: rgb(74 222 128 / 34%);
+  background:
+    linear-gradient(145deg, rgb(9 42 31 / 56%), rgb(4 14 17 / 92%));
+}
+
+.daily-mission-row.is-completed::before {
+  background: linear-gradient(#4ade80, #14b8a6);
+}
+
+.daily-mission-copy strong,
+.daily-mission-copy small,
+.daily-mission-progress-copy strong,
+.daily-mission-progress-copy small {
+  display: block;
+}
+
+.daily-mission-copy strong {
+  color: #eef6ff;
+  font-size: 10px;
+}
+
+.daily-mission-copy small {
+  margin-top: 4px;
+  color: #8193ad;
+  font-size: 8px;
+  line-height: 1.35;
+}
+
+.daily-mission-progress-copy {
+  text-align: right;
+}
+
+.daily-mission-progress-copy strong {
+  color: #dbeafe;
+  font-size: 9px;
+}
+
+.daily-mission-progress-copy small {
+  margin-top: 4px;
+  color: #fde68a;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.daily-mission-row.is-completed .daily-mission-progress-copy small {
+  color: #86efac;
+}
+
+.daily-mission-track {
+  grid-column: 1 / -1;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgb(15 23 42 / 88%);
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 48%);
+}
+
+.daily-mission-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #0ea5e9, #6366f1);
+  box-shadow: 0 0 10px rgb(56 189 248 / 35%);
+  transition: width 250ms ease;
+}
+
+.daily-mission-row.is-completed .daily-mission-track span {
+  background: linear-gradient(90deg, #22c55e, #14b8a6);
+  box-shadow: 0 0 10px rgb(74 222 128 / 35%);
+}
+
+.daily-missions-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 10px 11px;
+  border: 1px solid rgb(83 111 151 / 24%);
+  border-radius: 10px;
+  color: #7d90ab;
+  background: rgb(4 9 20 / 58%);
+  font-size: 8px;
+}
+
+.daily-missions-footer strong {
+  color: #fde68a;
+  font-size: 8px;
+}
+
+@media (max-width: 620px) {
+  .daily-mission-row {
+    grid-template-columns: 1fr;
+  }
+
+  .daily-mission-progress-copy {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+  }
+
+  .daily-missions-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+/* Step 32B: chữ nhiệm vụ lớn và rõ hơn */
+.daily-mission-copy strong {
+  font-size: 12px;
+}
+
+.daily-mission-copy small {
+  color: #b4c2d5;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.daily-mission-progress-copy strong {
+  font-size: 11px;
+}
+
+.daily-mission-progress-copy small {
+  font-size: 10px;
+}
+
+.daily-missions-footer {
+  color: #aebdd1;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.daily-missions-footer strong {
+  font-size: 10px;
+}
+
+/* Step 32C: chữ nhiệm vụ lớn và dễ đọc */
+.daily-mission-list {
+  gap: 12px;
+}
+
+.daily-mission-row {
+  gap: 11px 18px;
+  padding: 15px;
+}
+
+.daily-mission-copy strong {
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.daily-mission-copy small {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.daily-mission-progress-copy strong {
+  font-size: 14px;
+}
+
+.daily-mission-progress-copy small {
+  font-size: 13px;
+}
+
+.daily-mission-track {
+  height: 8px;
+}
+
+.daily-missions-footer {
+  margin-top: 13px;
+  padding: 13px 14px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.daily-missions-footer strong {
+  font-size: 13px;
+}
