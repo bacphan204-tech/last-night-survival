@@ -1,5 +1,7 @@
 import { GAME_CONFIG } from '../config/gameConfig'
 
+const EXPERIENCE_REQUIREMENT_MULTIPLIER = 0.8
+
 export type ExperienceGainResult = {
   levelsGained: number
 }
@@ -7,7 +9,13 @@ export type ExperienceGainResult = {
 export class ExperienceSystem {
   level = 1
   currentExperience = 0
-  experienceToNextLevel = GAME_CONFIG.experience.baseRequirement
+  experienceToNextLevel = Math.max(
+    1,
+    Math.round(
+      GAME_CONFIG.experience.baseRequirement *
+        EXPERIENCE_REQUIREMENT_MULTIPLIER,
+    ),
+  )
   pendingLevelUps = 0
 
   reset() {
@@ -65,12 +73,16 @@ export class ExperienceSystem {
   }
 
   private getRequirementForLevel(level: number) {
-    return Math.round(
-      GAME_CONFIG.experience.baseRequirement *
-        Math.pow(
-          GAME_CONFIG.experience.requirementGrowth,
-          Math.max(0, level - 1),
-        ),
+    return Math.max(
+      1,
+      Math.round(
+        GAME_CONFIG.experience.baseRequirement *
+          Math.pow(
+            GAME_CONFIG.experience.requirementGrowth,
+            Math.max(0, level - 1),
+          ) *
+          EXPERIENCE_REQUIREMENT_MULTIPLIER,
+      ),
     )
   }
 }

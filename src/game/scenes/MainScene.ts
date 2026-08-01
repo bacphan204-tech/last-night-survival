@@ -56,7 +56,7 @@ import {
 } from '../systems/StartingProtocolSystem'
 import { SupportEnemySystem } from '../systems/SupportEnemySystem'
 import { UpgradeSystem } from '../systems/UpgradeSystem'
-import { WaveSystem } from '../systems/WaveSystem'
+import { WaveSystem, type WaveKind } from '../systems/WaveSystem'
 import { UPGRADE_SELECTED_EVENT } from './UpgradeScene'
 import type {
   BossVariant,
@@ -73,6 +73,18 @@ import type {
 } from '../types/game'
 import { formatTime } from '../utils/time'
 import { WorldBuilder } from '../world/WorldBuilder'
+
+const PLAYER_BALANCE = {
+  maximumHealthMultiplier: 1.3,
+  attackDamageMultiplier: 1.25,
+  attackIntervalMultiplier: 0.82,
+  movementSpeedMultiplier: 1.14,
+  projectileSpeedMultiplier: 1.15,
+  pickupRadiusMultiplier: 1.25,
+  normalWaveHealRatio: 0.06,
+  miniBossWaveHealRatio: 0.12,
+  bossWaveHealRatio: 0.2,
+} as const
 
 export class MainScene extends Phaser.Scene {
   private player!: Phaser.Physics.Arcade.Image
@@ -427,6 +439,7 @@ export class MainScene extends Phaser.Scene {
   private resetGameState() {
     this.combatGeneration++
     this.playerStats = createBasePlayerStats()
+    this.applyBasePlayerBalance()
     this.startingProtocolSystem.applyToStats(
       this.playerStats,
       this.startingProtocolId,
@@ -477,7 +490,53 @@ export class MainScene extends Phaser.Scene {
     this.lastPlayerMoveDirection.set(1, 0)
   }
 
-private createPlayer() {
+
+  private applyBasePlayerBalance() {
+    this.playerStats.maximumHealth = Math.max(
+      1,
+      Math.round(
+        this.playerStats.maximumHealth *
+          PLAYER_BALANCE.maximumHealthMultiplier,
+      ),
+    )
+    this.playerStats.attackDamage = Math.max(
+      1,
+      Math.round(
+        this.playerStats.attackDamage *
+          PLAYER_BALANCE.attackDamageMultiplier,
+      ),
+    )
+    this.playerStats.attackInterval = Math.max(
+      80,
+      Math.round(
+        this.playerStats.attackInterval *
+          PLAYER_BALANCE.attackIntervalMultiplier,
+      ),
+    )
+    this.playerStats.movementSpeed = Math.max(
+      1,
+      Math.round(
+        this.playerStats.movementSpeed *
+          PLAYER_BALANCE.movementSpeedMultiplier,
+      ),
+    )
+    this.playerStats.projectileSpeed = Math.max(
+      1,
+      Math.round(
+        this.playerStats.projectileSpeed *
+          PLAYER_BALANCE.projectileSpeedMultiplier,
+      ),
+    )
+    this.playerStats.pickupRadius = Math.max(
+      1,
+      Math.round(
+        this.playerStats.pickupRadius *
+          PLAYER_BALANCE.pickupRadiusMultiplier,
+      ),
+    )
+  }
+
+  private createPlayer() {
     const startX = this.worldWidth / 2
     const startY = this.worldHeight / 2
 
@@ -584,6 +643,8 @@ private createPlayer() {
         activeSpecialEnemies,
       )
     ) {
+      const completedWaveKind = this.waveSystem.getWaveKind()
+      this.healAfterCompletedWave(completedWaveKind)
       this.beginWave(this.wave + 1)
       return
     }
@@ -635,6 +696,70 @@ private createPlayer() {
       hasActiveSpecial,
       spawned === 0,
     )
+  }
+
+  private healAfterCompletedWave(kind: WaveKind) {
+    const healRatio =
+      kind === 'boss'
+        ? PLAYER_BALANCE.bossWaveHealRatio
+        : kind === 'mini-boss'
+          ? PLAYER_BALANCE.miniBossWaveHealRatio
+          : PLAYER_BALANCE.normalWaveHealRatio
+
+    const healAmount = Math.max(
+      1,
+      Math.round(this.playerStats.maximumHealth * healRatio),
+    )
+    const previousHealth = this.playerHealth
+
+    this.playerHealth = Math.min(
+      this.playerStats.maximumHealth,
+      this.playerHealth + healAmount,
+    )
+
+    const restoredHealth = Math.max(
+      0,
+      Math.round(this.playerHealth - previousHealth),
+    )
+
+    this.updateHealthBar()
+
+    if (restoredHealth <= 0) {
+      return
+    }
+
+    const label =
+      kind === 'boss'
+        ? 'HỒI PHỤC SAU BOSS'
+        : kind === 'mini-boss'
+          ? 'HỒI PHỤC SAU MINI BOSS'
+          : 'HỒI PHỤC SAU ĐỢT'
+
+    const text = this.add
+      .text(
+        this.player.x,
+        this.player.y - 64,
+        `${label}  +${restoredHealth} MÁU`,
+        {
+          fontFamily: 'Arial, sans-serif',
+          fontSize: '15px',
+          fontStyle: 'bold',
+          color: '#86efac',
+          stroke: '#052e16',
+          strokeThickness: 4,
+        },
+      )
+      .setOrigin(0.5)
+      .setDepth(this.player.y + 48)
+
+    this.tweens.add({
+      targets: text,
+      y: text.y - 30,
+      alpha: 0,
+      duration: 850,
+      ease: 'Quad.Out',
+      onComplete: () => text.destroy(),
+    })
   }
 
   private getActiveSpecialEnemyCount() {
