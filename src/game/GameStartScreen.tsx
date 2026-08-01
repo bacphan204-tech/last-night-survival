@@ -35,6 +35,44 @@ type GameStartScreenProps = {
   ) => void
 }
 
+type LockableScreenOrientation = ScreenOrientation & {
+  lock?: (orientation: 'landscape') => Promise<void>
+}
+
+function isTouchDevice() {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    return false
+  }
+
+  return (
+    navigator.maxTouchPoints > 0 ||
+    window.matchMedia?.('(pointer: coarse)').matches === true
+  )
+}
+
+async function requestMobileGameMode() {
+  if (!isTouchDevice() || typeof document === 'undefined') {
+    return
+  }
+
+  try {
+    if (!document.fullscreenElement) {
+      await document.documentElement.requestFullscreen()
+    }
+  } catch {
+    // Trình duyệt có thể không hỗ trợ hoặc người dùng đã chặn toàn màn hình.
+  }
+
+  try {
+    const orientation = window.screen
+      .orientation as LockableScreenOrientation | undefined
+
+    await orientation?.lock?.('landscape')
+  } catch {
+    // iPhone/Safari và một số trình duyệt không cho khóa hướng màn hình.
+  }
+}
+
 function formatScore(value: number) {
   return new Intl.NumberFormat('vi-VN').format(value)
 }
@@ -147,7 +185,24 @@ export default function GameStartScreen({ onStart }: GameStartScreenProps) {
   const localBestScore = localLeaderboard.getBestScore()
   const localBestRun = localLeaderboard.getRecords()[0] ?? null
   const careerSummary = careerProgress.getSummary()
+  useEffect(() => {
+  const menu = document.querySelector<HTMLElement>('.start-menu-main')
 
+  const resetMenuScroll = () => {
+    menu?.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'instant',
+    })
+  }
+
+  resetMenuScroll()
+  window.addEventListener('orientationchange', resetMenuScroll)
+
+  return () => {
+    window.removeEventListener('orientationchange', resetMenuScroll)
+  }
+}, [])
   useEffect(() => {
     let cancelled = false
 
@@ -574,6 +629,10 @@ export default function GameStartScreen({ onStart }: GameStartScreenProps) {
     const savedAbilityId = activeAbilityShopSystem.setSelectedId(
       abilitySnapshot.selectedId,
     )
+
+    // Gọi ngay trong thao tác click/Enter để trình duyệt cho phép fullscreen.
+    void requestMobileGameMode()
+
     await playerProfileSystem.syncProgressNow()
     setIsStarting(true)
     onStart(savedProtocolId, savedSkinId, savedAbilityId)
@@ -592,6 +651,21 @@ export default function GameStartScreen({ onStart }: GameStartScreenProps) {
 
   return (
     <div className="game-start-screen">
+      <div
+        className="mobile-orientation-gate"
+        role="status"
+        aria-live="polite"
+      >
+        <div className="mobile-orientation-phone" aria-hidden="true">
+          <span />
+        </div>
+        <strong>XOAY NGANG ĐIỆN THOẠI</strong>
+        <p>
+          Xoay máy sang ngang, sau đó bấm Bắt đầu sinh tồn để mở game
+          toàn màn hình.
+        </p>
+      </div>
+
       <div className="start-atmosphere" aria-hidden="true">
         <span />
         <span />

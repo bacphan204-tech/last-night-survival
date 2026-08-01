@@ -11,10 +11,39 @@ import { RETURN_TO_MAIN_MENU_EVENT } from './events/gameEvents'
 import { MainScene } from './scenes/MainScene'
 import { UpgradeScene } from './scenes/UpgradeScene'
 
+type UnlockableScreenOrientation = ScreenOrientation & {
+  unlock?: () => void
+}
+
+function leaveMobileGameMode() {
+  try {
+    const orientation = window.screen
+      .orientation as UnlockableScreenOrientation | undefined
+    orientation?.unlock?.()
+  } catch {
+    // Một số trình duyệt không hỗ trợ mở khóa hướng màn hình.
+  }
+
+  if (document.fullscreenElement) {
+    void document.exitFullscreen().catch(() => undefined)
+  }
+}
+
 export default function PhaserGame() {
   const gameContainerRef = useRef<HTMLDivElement>(null)
   const gameRef = useRef<Phaser.Game | null>(null)
   const [hasStarted, setHasStarted] = useState(false)
+
+  useEffect(() => {
+    document.documentElement.classList.toggle(
+      'game-is-running',
+      hasStarted,
+    )
+
+    return () => {
+      document.documentElement.classList.remove('game-is-running')
+    }
+  }, [hasStarted])
 
   useEffect(() => {
     const container = gameContainerRef.current
@@ -41,17 +70,25 @@ export default function PhaserGame() {
       },
       scene: [MainScene, UpgradeScene],
       scale: {
-        mode: Phaser.Scale.FIT,
+        mode: Phaser.Scale.EXPAND,
         autoCenter: Phaser.Scale.CENTER_BOTH,
-        expandParent: false,
+        expandParent: true,
       },
     }
 
     const game = new Phaser.Game(config)
     gameRef.current = game
 
+    const refreshScale = () => {
+      window.requestAnimationFrame(() => {
+        game.scale.refresh()
+        game.scale.updateBounds()
+      })
+    }
+
     const handleReturnToMainMenu = () => {
       setHasStarted(false)
+      leaveMobileGameMode()
     }
 
     game.events.on(
@@ -59,14 +96,22 @@ export default function PhaserGame() {
       handleReturnToMainMenu,
     )
 
-    const resizeObserver = new ResizeObserver(() => {
-      game.scale.refresh()
-    })
-
+    const resizeObserver = new ResizeObserver(refreshScale)
     resizeObserver.observe(container)
 
+    window.addEventListener('resize', refreshScale)
+    window.addEventListener('orientationchange', refreshScale)
+
+    // Fullscreen và xoay ngang thường làm viewport đổi kích thước nhiều lần.
+    const firstRefreshId = window.setTimeout(refreshScale, 80)
+    const secondRefreshId = window.setTimeout(refreshScale, 320)
+
     return () => {
+      window.clearTimeout(firstRefreshId)
+      window.clearTimeout(secondRefreshId)
       resizeObserver.disconnect()
+      window.removeEventListener('resize', refreshScale)
+      window.removeEventListener('orientationchange', refreshScale)
       game.events.off(
         RETURN_TO_MAIN_MENU_EVENT,
         handleReturnToMainMenu,

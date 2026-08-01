@@ -1891,3 +1891,402 @@ input {
     font-size: 22px;
   }
 }
+
+/* STEP 35 — Mobile landscape + fullscreen */
+.mobile-orientation-gate {
+  display: none;
+}
+
+@media (max-width: 900px) and (orientation: portrait) {
+  .mobile-orientation-gate {
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 14px;
+    padding:
+      max(24px, env(safe-area-inset-top))
+      max(24px, env(safe-area-inset-right))
+      max(24px, env(safe-area-inset-bottom))
+      max(24px, env(safe-area-inset-left));
+    text-align: center;
+    color: #f8fafc;
+    background:
+      radial-gradient(circle at 50% 35%, rgb(14 116 144 / 30%), transparent 34%),
+      linear-gradient(155deg, #02050d, #071225 66%, #02040a);
+    touch-action: none;
+  }
+
+  .mobile-orientation-gate strong {
+    font-size: clamp(20px, 6vw, 30px);
+    line-height: 1.12;
+    letter-spacing: 0.08em;
+  }
+
+  .mobile-orientation-gate p {
+    max-width: 420px;
+    margin: 0;
+    color: #b9c9dc;
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .mobile-orientation-phone {
+    position: relative;
+    width: 46px;
+    height: 76px;
+    border: 3px solid #8eeeff;
+    border-radius: 10px;
+    box-shadow:
+      0 0 30px rgb(103 232 249 / 24%),
+      inset 0 0 18px rgb(103 232 249 / 8%);
+    animation: mobilePhoneRotate 1.65s ease-in-out infinite;
+  }
+
+  .mobile-orientation-phone::before {
+    content: '';
+    position: absolute;
+    top: 5px;
+    left: 50%;
+    width: 14px;
+    height: 3px;
+    border-radius: 999px;
+    background: #8eeeff;
+    transform: translateX(-50%);
+  }
+
+  .mobile-orientation-phone span {
+    position: absolute;
+    bottom: 6px;
+    left: 50%;
+    width: 6px;
+    height: 6px;
+    border: 1px solid #8eeeff;
+    border-radius: 50%;
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes mobilePhoneRotate {
+  0%,
+  18% {
+    transform: rotate(0deg);
+  }
+
+  68%,
+  100% {
+    transform: rotate(90deg);
+  }
+}
+
+/* Menu điện thoại ngang: dùng trọn viewport và ẩn cột BXH. */
+@media (orientation: landscape) and (max-height: 720px) {
+  html,
+  body,
+  #root {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .app {
+    position: fixed;
+    inset: 0;
+    width: 100dvw;
+    height: 100dvh;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .game-header,
+  .game-note {
+    display: none;
+  }
+
+  .game-panel {
+    position: fixed;
+    inset: 0;
+    width: 100dvw;
+    height: 100dvh;
+    min-width: 0;
+    min-height: 0;
+    aspect-ratio: auto;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .game-start-screen {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    padding:
+      max(6px, env(safe-area-inset-top))
+      max(8px, env(safe-area-inset-right))
+      max(6px, env(safe-area-inset-bottom))
+      max(8px, env(safe-area-inset-left));
+    overflow: hidden;
+  }
+
+  .start-leaderboard {
+    display: none;
+  }
+
+  .start-menu-main {
+    gap: 6px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 0 3px 10px;
+    overscroll-behavior: contain;
+  }
+
+  .start-hero {
+    min-height: 0;
+    padding: 0 3px;
+    align-items: center;
+  }
+
+  .start-kicker {
+    font-size: 9px;
+  }
+
+  .start-description {
+    max-width: none;
+    font-size: 11px;
+    line-height: 1.35;
+  }
+
+  .start-resource-cluster {
+    display: none;
+  }
+
+  .start-control-panel,
+  .loadout-tab-stage {
+    padding: 8px;
+    border-radius: 12px;
+  }
+
+  .start-control-topline {
+    grid-template-columns: minmax(0, 1fr) minmax(180px, 230px);
+    gap: 8px;
+  }
+
+  .player-name-field {
+    gap: 3px;
+  }
+
+  .player-name-field > span,
+  .starting-protocol-heading > span {
+    font-size: 10px;
+  }
+
+  .player-name-field input {
+    min-height: 40px;
+    padding-inline: 11px;
+    font-size: 13px;
+  }
+
+  .player-name-field small,
+  .starting-protocol-heading small {
+    font-size: 9px;
+    line-height: 1.3;
+  }
+
+  .start-game-button {
+    min-height: 50px;
+    padding: 6px 10px;
+  }
+
+  .start-game-button span {
+    font-size: 13px;
+  }
+
+  .start-game-button small {
+    margin-top: 2px;
+    font-size: 9px;
+  }
+
+  .player-profile-card {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    margin: 8px 0 0;
+    padding: 8px 10px;
+    border-radius: 10px;
+  }
+
+  .player-profile-card span {
+    font-size: 9px;
+  }
+
+  .player-profile-card strong {
+    margin-top: 2px;
+    font-size: 13px;
+  }
+
+  .player-profile-card small {
+    font-size: 9px;
+    line-height: 1.35;
+  }
+
+  .player-profile-actions {
+    min-width: 0;
+  }
+
+  .player-profile-actions small {
+    display: none;
+  }
+
+  .player-profile-reset-button {
+    min-height: 34px;
+    padding: 7px 10px;
+    font-size: 9px;
+  }
+
+  .player-profile-error {
+    margin: 7px 0;
+    padding: 8px 10px;
+    font-size: 10px;
+  }
+
+  .recovery-code-card,
+  .profile-reset-card {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    margin: 8px 0;
+    padding: 10px;
+  }
+
+  .recovery-code-actions,
+  .profile-reset-actions {
+    grid-template-columns: 1fr;
+    min-width: 150px;
+  }
+
+  .starting-protocol-section {
+    margin-top: 8px;
+  }
+
+  .starting-protocol-heading {
+    margin-bottom: 5px;
+  }
+
+  .starting-protocol-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .starting-protocol-card {
+    min-height: 72px;
+    padding: 7px;
+    border-radius: 8px;
+  }
+
+  .starting-protocol-card > span {
+    font-size: 8px;
+  }
+
+  .starting-protocol-card > strong {
+    margin-top: 2px;
+    font-size: 10px;
+    line-height: 1.15;
+  }
+
+  .starting-protocol-card > small,
+  .starting-protocol-card > em {
+    margin-top: 3px;
+    font-size: 8px;
+    line-height: 1.2;
+  }
+
+  .selected-loadout-strip {
+    display: none;
+  }
+
+  .loadout-tabs {
+    position: relative;
+    top: auto;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+    padding: 5px;
+  }
+
+  .loadout-tabs button {
+    min-height: 38px;
+    padding: 5px 7px;
+  }
+
+  .loadout-tabs span {
+    font-size: 10px;
+  }
+
+  .loadout-tabs small {
+    margin-top: 1px;
+    font-size: 8px;
+  }
+
+  .loadout-tab-stage {
+    min-height: 230px;
+  }
+}
+
+/* Trong trận: bỏ toàn bộ khung web, Phaser chiếm trọn viewport. */
+html.game-is-running,
+html.game-is-running body,
+html.game-is-running #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+}
+
+html.game-is-running .app {
+  position: fixed;
+  inset: 0;
+  width: 100dvw;
+  height: 100dvh;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+html.game-is-running .game-header,
+html.game-is-running .game-note {
+  display: none;
+}
+
+html.game-is-running .game-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  width: 100dvw;
+  height: 100dvh;
+  min-width: 0;
+  min-height: 0;
+  aspect-ratio: auto;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: #000;
+}
+
+html.game-is-running .game-container,
+html.game-is-running .phaser-canvas-host {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+html.game-is-running .game-container canvas {
+  display: block;
+  max-width: none;
+  max-height: none;
+}
+

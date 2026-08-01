@@ -9,7 +9,9 @@ export class MobileControlSystem {
   private activePointerId: number | null = null
   private movementEnabled = true
   private created = false
-  private readonly joystickRadius = 50
+  private readonly joystickRadius = 58
+  private readonly knobRadius = 26
+  private readonly hintOffset = 78
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene
@@ -30,26 +32,37 @@ export class MobileControlSystem {
         basePosition.y,
         this.joystickRadius,
         0x0f172a,
-        0.42,
+        0.48,
       )
-      .setStrokeStyle(3, 0x67e8f9, 0.38)
+      .setStrokeStyle(4, 0x67e8f9, 0.48)
       .setScrollFactor(0)
       .setDepth(28600)
 
     this.knob = this.scene.add
-      .circle(basePosition.x, basePosition.y, 22, 0x67e8f9, 0.58)
-      .setStrokeStyle(2, 0xe0f2fe, 0.72)
+      .circle(
+        basePosition.x,
+        basePosition.y,
+        this.knobRadius,
+        0x67e8f9,
+        0.68,
+      )
+      .setStrokeStyle(3, 0xe0f2fe, 0.82)
       .setScrollFactor(0)
       .setDepth(28601)
 
     this.hint = this.scene.add
-      .text(basePosition.x, basePosition.y + 67, 'KÉO ĐỂ DI CHUYỂN', {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '9px',
-        fontStyle: 'bold',
-        color: '#94a3b8',
-        letterSpacing: 0.8,
-      })
+      .text(
+        basePosition.x,
+        basePosition.y + this.hintOffset,
+        'KÉO ĐỂ DI CHUYỂN',
+        {
+          fontFamily: 'Arial, sans-serif',
+          fontSize: '10px',
+          fontStyle: 'bold',
+          color: '#cbd5e1',
+          letterSpacing: 0.8,
+        },
+      )
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(28601)
@@ -58,6 +71,7 @@ export class MobileControlSystem {
     this.scene.input.on('pointermove', this.handlePointerMove, this)
     this.scene.input.on('pointerup', this.handlePointerUp, this)
     this.scene.input.on('gameout', this.release, this)
+    this.scene.scale.on('resize', this.handleResize, this)
 
     this.scene.events.once('shutdown', this.destroy, this)
   }
@@ -92,6 +106,22 @@ export class MobileControlSystem {
 
     const basePosition = this.getBasePosition()
     this.knob?.setPosition(basePosition.x, basePosition.y)
+  }
+
+  private handleResize() {
+    this.release()
+    this.positionControls()
+  }
+
+  private positionControls() {
+    const basePosition = this.getBasePosition()
+
+    this.base?.setPosition(basePosition.x, basePosition.y)
+    this.knob?.setPosition(basePosition.x, basePosition.y)
+    this.hint?.setPosition(
+      basePosition.x,
+      basePosition.y + this.hintOffset,
+    )
   }
 
   private handlePointerDown(pointer: Phaser.Input.Pointer) {
@@ -162,13 +192,18 @@ export class MobileControlSystem {
     )
 
     return (
-      distance <= this.joystickRadius + 42 ||
-      (x <= width * 0.48 && y >= height * 0.48)
+      distance <= this.joystickRadius + 52 ||
+      (x <= width * 0.5 && y >= height * 0.42)
     )
   }
 
   private getBasePosition() {
-    return new Phaser.Math.Vector2(92, this.scene.scale.height - 88)
+    const width = this.scene.scale.width
+    const height = this.scene.scale.height
+    const x = Phaser.Math.Clamp(width * 0.115, 104, 132)
+    const bottomOffset = Phaser.Math.Clamp(height * 0.17, 90, 114)
+
+    return new Phaser.Math.Vector2(x, height - bottomOffset)
   }
 
   private setVisible(visible: boolean) {
@@ -194,6 +229,7 @@ export class MobileControlSystem {
     this.scene.input.off('pointermove', this.handlePointerMove, this)
     this.scene.input.off('pointerup', this.handlePointerUp, this)
     this.scene.input.off('gameout', this.release, this)
+    this.scene.scale.off('resize', this.handleResize, this)
 
     this.base?.destroy()
     this.knob?.destroy()
