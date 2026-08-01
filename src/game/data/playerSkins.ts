@@ -61,8 +61,8 @@ export type PlayerSkinDefinition = {
 
 export const DEFAULT_PLAYER_SKIN_ID: PlayerSkinId = 'survivor'
 
-// Bản Step 30B mở toàn bộ skin để kiểm tra. Bản khóa shop chỉ cần đổi thành false.
-export const PLAYER_SKIN_TEST_MODE = true
+// Production: skin phải được mở bằng Mảnh Đêm.
+export const PLAYER_SKIN_TEST_MODE = false
 
 export const PLAYER_SKIN_DEFINITIONS: readonly PlayerSkinDefinition[] = [
   {

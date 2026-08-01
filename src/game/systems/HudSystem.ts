@@ -271,7 +271,7 @@ export class HudSystem {
       .text(
         width / 2,
         height - 23,
-        'WASD: DI CHUYỂN  •  N: ĐỢT KẾ  •  L: +100 XP (TEST)',
+        'WASD: DI CHUYỂN  •  Q: KỸ NĂNG CHỦ ĐỘNG  •  ESC: TẠM DỪNG',
         {
           fontFamily: 'Arial, sans-serif',
           fontSize: '10px',

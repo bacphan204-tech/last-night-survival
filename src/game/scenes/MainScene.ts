@@ -93,10 +93,6 @@ export class MainScene extends Phaser.Scene {
   private movementKeys!: MovementKeys
   private restartKey!: Phaser.Input.Keyboard.Key
   private pauseKey!: Phaser.Input.Keyboard.Key
-  private nextWaveKey!: Phaser.Input.Keyboard.Key
-  private levelTestKey!: Phaser.Input.Keyboard.Key
-  private pickupTestKey!: Phaser.Input.Keyboard.Key
-  private chestTestKey!: Phaser.Input.Keyboard.Key
   private activeAbilityKey!: Phaser.Input.Keyboard.Key
 
   private rng!: Phaser.Math.RandomDataGenerator
@@ -340,43 +336,6 @@ export class MainScene extends Phaser.Scene {
       return
     }
 
-    if (Phaser.Input.Keyboard.JustDown(this.nextWaveKey)) {
-      this.clearEnemiesForWaveTest()
-      this.beginWave(this.wave + 1, false, true)
-      return
-    }
-
-    if (Phaser.Input.Keyboard.JustDown(this.levelTestKey)) {
-      const result =
-        this.experienceSystem.grantOneLevelForTesting()
-
-      if (result.levelsGained > 0) {
-        this.audioSystem.playLevelUp()
-        this.applyPlayerLevelProgression()
-      }
-
-      this.updateExperienceHud()
-
-      if (result.levelsGained > 0) {
-        this.openUpgradeSelection()
-        return
-      }
-    }
-
-    if (Phaser.Input.Keyboard.JustDown(this.pickupTestKey)) {
-      this.pickupSystem.spawnNextTestPickup(
-        this.player.x + 110,
-        this.player.y,
-      )
-    }
-
-    if (Phaser.Input.Keyboard.JustDown(this.chestTestKey)) {
-      this.chestSystem.spawnTestChest(
-        this.player.x + 135,
-        this.player.y,
-      )
-    }
-
     if (Phaser.Input.Keyboard.JustDown(this.activeAbilityKey)) {
       this.tryActivateActiveAbility()
     }
@@ -559,19 +518,16 @@ private createPlayer() {
   private beginWave(
     wave: number,
     isInitialWave = false,
-    isTestTransition = false,
   ) {
     this.waveSystem.beginWave(this.time.now, wave)
 
-    if (!isTestTransition) {
-      const award = this.scoreSystem.awardWave(
-        this.wave,
-        this.waveSystem.getWaveKind(),
-      )
-      this.score = award.total
-      this.runStatsSystem.recordScore('wave', award.points)
-      this.showWaveScoreBonus(award.points)
-    }
+    const award = this.scoreSystem.awardWave(
+      this.wave,
+      this.waveSystem.getWaveKind(),
+    )
+    this.score = award.total
+    this.runStatsSystem.recordScore('wave', award.points)
+    this.showWaveScoreBonus(award.points)
 
     this.showWaveAnnouncement()
     this.audioSystem.playWaveStart(this.waveSystem.getWaveKind())
@@ -1629,28 +1585,12 @@ private createPlayer() {
       Phaser.Input.Keyboard.KeyCodes.ESC,
     )
 
-    this.nextWaveKey = keyboard.addKey(
-      Phaser.Input.Keyboard.KeyCodes.N,
-    )
-
-    this.levelTestKey = keyboard.addKey(
-      Phaser.Input.Keyboard.KeyCodes.L,
-    )
-
-    this.pickupTestKey = keyboard.addKey(
-      Phaser.Input.Keyboard.KeyCodes.P,
-    )
-
-    this.chestTestKey = keyboard.addKey(
-      Phaser.Input.Keyboard.KeyCodes.C,
-    )
-
     this.activeAbilityKey = keyboard.addKey(
       Phaser.Input.Keyboard.KeyCodes.Q,
     )
 
     keyboard.addCapture(
-      'W,A,S,D,Q,N,L,P,C,ESC,UP,DOWN,LEFT,RIGHT',
+      'W,A,S,D,Q,ESC,UP,DOWN,LEFT,RIGHT',
     )
   }
 
@@ -4588,50 +4528,6 @@ private updatePlayerMovement() {
       this.time.now,
       enemy.rank === 'normal' ? 280 : 650,
     )
-  }
-
-  private clearEnemiesForWaveTest() {
-    this.combatGeneration++
-    this.enemyDeathEffectSystem.reset(this.enemies)
-    this.clearAllProjectiles()
-    this.enemyProjectileSystem.clear()
-    this.pickupSystem.clear()
-    this.chestSystem.clear()
-    this.experienceOrbSystem.cancelMagnet()
-
-    for (const enemy of this.enemies) {
-      if (!enemy.alive) {
-        continue
-      }
-
-      this.cancelBomberWarning(enemy)
-      this.supportEnemySystem.clearEnemy(enemy)
-      this.enemyDeathEffectSystem.clearEnemy(enemy)
-      this.pendingPathRequests.delete(enemy.id)
-      enemy.alive = false
-      enemy.health = 0
-
-      this.tweens.killTweensOf(enemy.sprite)
-      this.tweens.killTweensOf(enemy.shadow)
-      this.tweens.killTweensOf(enemy.glow)
-      this.tweens.killTweensOf(enemy.label)
-      this.tweens.killTweensOf(enemy.healthBarBackground)
-      this.tweens.killTweensOf(enemy.healthBar)
-
-      enemy.collider.destroy()
-      enemy.sprite.destroy()
-      enemy.shadow.destroy()
-      enemy.glow.destroy()
-      enemy.label.destroy()
-      enemy.healthBarBackground.destroy()
-      enemy.healthBar.destroy()
-    }
-
-    this.enemies = []
-    this.pendingPathRequests.clear()
-    this.enemySpatialBuckets.clear()
-    this.updateCombatHud()
-    this.updateBossHud()
   }
 
   private applyPickup(

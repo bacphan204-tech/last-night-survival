@@ -43,9 +43,6 @@ export class ChestSystem {
     return true
   }
 
-  spawnTestChest(x: number, y: number) {
-    this.spawn(x, y)
-  }
 
   update(
     now: number,

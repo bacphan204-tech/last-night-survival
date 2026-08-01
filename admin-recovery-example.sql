@@ -7,3 +7,4 @@ select public.admin_transfer_player_profile_v1(
   '00000000-0000-0000-0000-000000000000'::uuid,
   'TenMoi' -- đổi thành null nếu giữ nguyên tên cũ
 );
+LNS-EBB7-CE30-9A02

@@ -22,7 +22,6 @@ export class PickupSystem {
   private readonly rng: Phaser.Math.RandomDataGenerator
   private pickups: PickupState[] = []
   private idCounter = 0
-  private testKindIndex = 0
 
   constructor(
     scene: Phaser.Scene,
@@ -35,7 +34,6 @@ export class PickupSystem {
   reset() {
     this.clear()
     this.idCounter = 0
-    this.testKindIndex = 0
   }
 
   trySpawnDrop(
@@ -54,13 +52,6 @@ export class PickupSystem {
     return kind
   }
 
-  spawnNextTestPickup(x: number, y: number) {
-    const kinds: PickupKind[] = ['health', 'bomb', 'magnet']
-    const kind = kinds[this.testKindIndex % kinds.length]
-    this.testKindIndex++
-    this.spawn(x, y, kind)
-    return kind
-  }
 
   update(
     now: number,

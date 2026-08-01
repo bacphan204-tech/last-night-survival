@@ -33,8 +33,8 @@ export type ActiveAbilityDefinition = {
   previewSecondary: string
 }
 
-// Bản Step 31 mở toàn bộ kỹ năng để kiểm tra. Khi khóa shop đổi thành false.
-export const ACTIVE_ABILITY_TEST_MODE = true
+// Production: kỹ năng chủ động phải được mở bằng Mảnh Đêm.
+export const ACTIVE_ABILITY_TEST_MODE = false
 export const DEFAULT_TEST_ACTIVE_ABILITY_ID: ActiveAbilityId = 'bullet-crown'
 
 export const ACTIVE_ABILITY_DEFINITIONS: readonly ActiveAbilityDefinition[] = [

@@ -56,11 +56,6 @@ export class ExperienceSystem {
     )
   }
 
-  grantOneLevelForTesting(): ExperienceGainResult {
-    return this.addExperience(
-      this.getExperienceNeededForNextLevel(),
-    )
-  }
 
   getProgressRatio() {
     return Math.min(
