@@ -111,6 +111,10 @@ export default function GameStartScreen({ onStart }: GameStartScreenProps) {
     useState(false)
   const [isClaimingProfile, setIsClaimingProfile] = useState(false)
   const [copyNotice, setCopyNotice] = useState('')
+  const [isResetPanelOpen, setIsResetPanelOpen] = useState(false)
+  const [resetConfirmationName, setResetConfirmationName] = useState('')
+  const [isResettingProfile, setIsResettingProfile] = useState(false)
+  const [resetError, setResetError] = useState('')
   const [onlineRecords, setOnlineRecords] = useState<
     OnlineLeaderboardEntry[]
   >([])
@@ -437,6 +441,46 @@ export default function GameStartScreen({ onStart }: GameStartScreenProps) {
     setNameError('')
   }
 
+  const handleOpenResetPanel = () => {
+    setResetConfirmationName('')
+    setResetError('')
+    setIsResetPanelOpen(true)
+  }
+
+  const handleCloseResetPanel = () => {
+    if (isResettingProfile) {
+      return
+    }
+
+    setIsResetPanelOpen(false)
+    setResetConfirmationName('')
+    setResetError('')
+  }
+
+  const handleResetProfile = async () => {
+    if (isResettingProfile) {
+      return
+    }
+
+    if (resetConfirmationName.trim() !== displayName) {
+      setResetError('Hãy nhập chính xác tên người chơi hiện tại để xác nhận.')
+      return
+    }
+
+    setIsResettingProfile(true)
+    setResetError('')
+
+    const result = await playerProfileSystem.resetProfileAndProgress()
+
+    if (result.status === 'deleted' || result.status === 'unclaimed') {
+      window.location.reload()
+      return
+    }
+
+    setIsResettingProfile(false)
+    setResetError(result.message)
+  }
+
   const handleStart = async () => {
     if (isStarting || isClaimingProfile) {
       return
@@ -662,7 +706,82 @@ export default function GameStartScreen({ onStart }: GameStartScreenProps) {
                   <code>{profileDeviceId}</code>
                 </div>
               )}
+
+            {(profileStatus === 'ready' ||
+              profileStatus === 'ready-offline') && (
+              <div className="player-profile-actions">
+                <button
+                  className="player-profile-reset-button"
+                  type="button"
+                  onClick={handleOpenResetPanel}
+                  disabled={isResettingProfile}
+                >
+                  ĐẶT LẠI HỒ SƠ
+                </button>
+                <small>Xóa tên và toàn bộ tiến trình để bắt đầu lại.</small>
+              </div>
+            )}
           </section>
+
+          {isResetPanelOpen && (
+            <section
+              className="profile-reset-card"
+              aria-label="Xác nhận đặt lại hồ sơ"
+            >
+              <div className="profile-reset-warning" aria-hidden="true">
+                !
+              </div>
+              <div className="profile-reset-copy">
+                <span>VÙNG NGUY HIỂM</span>
+                <strong>XÓA VĨNH VIỄN HỒ SƠ?</strong>
+                <p>
+                  Hành động này sẽ xóa tên <b>{displayName}</b>, hồ sơ đám mây,
+                  Mảnh Đêm, skin, kỹ năng, thành tựu, nhiệm vụ, bảng điểm cá
+                  nhân và các lượt chơi online của tài khoản này. Không thể
+                  hoàn tác.
+                </p>
+                <label>
+                  <small>Nhập chính xác tên hiện tại để xác nhận</small>
+                  <input
+                    value={resetConfirmationName}
+                    onChange={(event) => {
+                      setResetConfirmationName(event.target.value)
+                      setResetError('')
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        void handleResetProfile()
+                      }
+                    }}
+                    placeholder={displayName}
+                    autoComplete="off"
+                    spellCheck={false}
+                    disabled={isResettingProfile}
+                  />
+                </label>
+                {resetError && <em>{resetError}</em>}
+              </div>
+              <div className="profile-reset-actions">
+                <button
+                  type="button"
+                  onClick={handleCloseResetPanel}
+                  disabled={isResettingProfile}
+                >
+                  HỦY
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleResetProfile()}
+                  disabled={
+                    isResettingProfile ||
+                    resetConfirmationName.trim() !== displayName
+                  }
+                >
+                  {isResettingProfile ? 'ĐANG XÓA...' : 'XÓA VĨNH VIỄN'}
+                </button>
+              </div>
+            </section>
+          )}
 
           {nameError && <p className="player-profile-error">{nameError}</p>}
 

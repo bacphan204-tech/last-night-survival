@@ -63,6 +63,18 @@ export type PlayerProfileClaimResult = {
   message: string
 }
 
+export type PlayerProfileResetStatus =
+  | 'deleted'
+  | 'unclaimed'
+  | 'offline'
+  | 'error'
+
+export type PlayerProfileResetResult = {
+  status: PlayerProfileResetStatus
+  deletedOnlineRuns: number
+  message: string
+}
+
 type StoredProfileBinding = {
   profileId: string
   ownerId: string
@@ -508,6 +520,72 @@ export class PlayerProfileSystem {
     }
   }
 
+  async resetProfileAndProgress(): Promise<PlayerProfileResetResult> {
+    if (!this.isConfigured() || !supabase || !navigator.onLine) {
+      return {
+        status: 'offline',
+        deletedOnlineRuns: 0,
+        message:
+          'Cần có mạng để xóa hồ sơ đám mây và toàn bộ tiến trình.',
+      }
+    }
+
+    const user = await this.initializeAuthenticatedUser()
+
+    if (!user) {
+      return {
+        status: 'error',
+        deletedOnlineRuns: 0,
+        message: this.lastErrorMessage || 'Không thể xác minh thiết bị.',
+      }
+    }
+
+    const { data, error } = await supabase.rpc(
+      'reset_my_player_profile_v1',
+    )
+
+    if (error) {
+      return {
+        status: 'error',
+        deletedOnlineRuns: 0,
+        message: this.recordError('ĐẶT LẠI HỒ SƠ', error.message),
+      }
+    }
+
+    const response = parseObject(data)
+    const status = safeString(response?.status)
+    const deletedOnlineRuns = safeInteger(response?.deleted_online_runs)
+
+    if (status !== 'deleted' && status !== 'unclaimed') {
+      return {
+        status: 'error',
+        deletedOnlineRuns,
+        message:
+          safeString(response?.reason) ||
+          'Máy chủ không xác nhận việc đặt lại hồ sơ.',
+      }
+    }
+
+    if (this.syncTimer !== null && typeof window !== 'undefined') {
+      window.clearTimeout(this.syncTimer)
+      this.syncTimer = null
+    }
+
+    this.currentProfile = null
+    this.syncPromise = null
+    this.lastErrorMessage = ''
+    this.clearAllLocalProgress()
+
+    return {
+      status: status === 'deleted' ? 'deleted' : 'unclaimed',
+      deletedOnlineRuns,
+      message:
+        status === 'deleted'
+          ? 'Đã xóa hồ sơ, tên người chơi và toàn bộ tiến trình.'
+          : 'Thiết bị chưa có hồ sơ đám mây. Dữ liệu cục bộ đã được xóa.',
+    }
+  }
+
   markProgressDirty() {
     const profile = this.currentProfile
 
@@ -702,6 +780,58 @@ export class PlayerProfileSystem {
     }
 
     return signInResult.data.user
+  }
+
+  private clearAllLocalProgress() {
+    const storage = safeStorage()
+
+    if (!storage) {
+      return
+    }
+
+    const removableKeys: string[] = []
+
+    for (let index = 0; index < storage.length; index++) {
+      const key = storage.key(index)
+
+      if (key?.startsWith(STORAGE_PREFIX)) {
+        removableKeys.push(key)
+      }
+    }
+
+    for (const key of removableKeys) {
+      storage.removeItem(key)
+    }
+
+    try {
+      if (typeof globalThis.sessionStorage !== 'undefined') {
+        const sessionKeys: string[] = []
+
+        for (
+          let index = 0;
+          index < globalThis.sessionStorage.length;
+          index++
+        ) {
+          const key = globalThis.sessionStorage.key(index)
+
+          if (key?.startsWith(STORAGE_PREFIX)) {
+            sessionKeys.push(key)
+          }
+        }
+
+        for (const key of sessionKeys) {
+          globalThis.sessionStorage.removeItem(key)
+        }
+      }
+    } catch {
+      // sessionStorage có thể bị chặn; localStorage đã được xóa trước đó.
+    }
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('last-night-survival:progress-hydrated'),
+      )
+    }
   }
 
   private captureLocalProgress(): CloudProgressEnvelope {

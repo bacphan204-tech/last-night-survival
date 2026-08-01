@@ -1642,6 +1642,194 @@ input {
   border-color: transparent;
 }
 
+.player-profile-actions {
+  display: grid;
+  gap: 7px;
+  justify-items: end;
+  min-width: 190px;
+}
+
+.player-profile-actions small {
+  max-width: 230px;
+  color: #9db0bc;
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: right;
+}
+
+.player-profile-reset-button {
+  min-height: 42px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 101, 119, 0.42);
+  border-radius: 10px;
+  color: #ffd7dc;
+  background:
+    linear-gradient(135deg, rgba(118, 22, 39, 0.42), rgba(42, 12, 22, 0.72));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 0 0 rgba(255, 78, 104, 0);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.player-profile-reset-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(255, 119, 135, 0.76);
+  background:
+    linear-gradient(135deg, rgba(145, 28, 48, 0.58), rgba(52, 12, 25, 0.84));
+  box-shadow: 0 0 24px rgba(255, 65, 94, 0.13);
+}
+
+.player-profile-reset-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+.profile-reset-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  margin: 14px 0 20px;
+  padding: 18px;
+  border: 1px solid rgba(255, 88, 109, 0.56);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(255, 62, 92, 0.16), transparent 42%),
+    linear-gradient(135deg, rgba(54, 12, 23, 0.96), rgba(15, 11, 20, 0.98));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 18px 48px rgba(0, 0, 0, 0.25),
+    0 0 32px rgba(255, 53, 85, 0.08);
+}
+
+.profile-reset-warning {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid rgba(255, 120, 136, 0.7);
+  border-radius: 14px;
+  color: #fff4f6;
+  background: linear-gradient(145deg, #d72f4d, #7f162c);
+  box-shadow: 0 0 24px rgba(255, 56, 89, 0.2);
+  font-size: 26px;
+  font-weight: 950;
+}
+
+.profile-reset-copy {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.profile-reset-copy > span {
+  color: #ff8e9d;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+}
+
+.profile-reset-copy > strong {
+  color: #ffffff;
+  font-size: 18px;
+  letter-spacing: 0.04em;
+}
+
+.profile-reset-copy p {
+  margin: 0;
+  color: #d9c2c8;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.profile-reset-copy p b {
+  color: #ffffff;
+}
+
+.profile-reset-copy label {
+  display: grid;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.profile-reset-copy label small {
+  color: #ffb6c0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.profile-reset-copy input {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 113, 132, 0.4);
+  border-radius: 10px;
+  outline: none;
+  color: #ffffff;
+  background: rgba(4, 8, 14, 0.72);
+  font-size: 14px;
+  font-weight: 800;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.profile-reset-copy input:focus {
+  border-color: rgba(255, 132, 147, 0.9);
+  box-shadow: 0 0 0 3px rgba(255, 73, 103, 0.12);
+}
+
+.profile-reset-copy em {
+  color: #ffd2d8;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.profile-reset-actions {
+  display: grid;
+  gap: 9px;
+  min-width: 166px;
+}
+
+.profile-reset-actions button {
+  min-height: 42px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+  cursor: pointer;
+}
+
+.profile-reset-actions button:first-child {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #d9e1e7;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.profile-reset-actions button:last-child {
+  border: 1px solid rgba(255, 112, 128, 0.74);
+  color: #ffffff;
+  background: linear-gradient(135deg, #e13c58, #8e1932);
+  box-shadow: 0 0 22px rgba(255, 46, 82, 0.14);
+}
+
+.profile-reset-actions button:disabled {
+  cursor: not-allowed;
+  filter: saturate(0.45);
+  opacity: 0.48;
+}
+
 .start-game-button:disabled {
   cursor: not-allowed;
   filter: saturate(0.55);
@@ -1650,16 +1838,24 @@ input {
 
 @media (max-width: 860px) {
   .player-profile-card,
-  .recovery-code-card {
+  .recovery-code-card,
+  .profile-reset-card {
     grid-template-columns: 1fr;
   }
 
+  .player-profile-actions,
   .player-device-id {
     justify-items: start;
     max-width: none;
   }
 
-  .recovery-code-actions {
+  .player-profile-actions small {
+    max-width: none;
+    text-align: left;
+  }
+
+  .recovery-code-actions,
+  .profile-reset-actions {
     grid-template-columns: 1fr 1fr;
     min-width: 0;
   }
@@ -1667,7 +1863,8 @@ input {
 
 @media (max-width: 560px) {
   .player-profile-card,
-  .recovery-code-card {
+  .recovery-code-card,
+  .profile-reset-card {
     padding: 14px;
     border-radius: 13px;
   }
@@ -1683,7 +1880,14 @@ input {
     font-size: 13px;
   }
 
-  .recovery-code-actions {
+  .recovery-code-actions,
+  .profile-reset-actions {
     grid-template-columns: 1fr;
+  }
+
+  .profile-reset-warning {
+    width: 42px;
+    height: 42px;
+    font-size: 22px;
   }
 }
