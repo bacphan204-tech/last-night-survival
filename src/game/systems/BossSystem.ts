@@ -9,6 +9,8 @@ import type {
   EnemyUnit,
 } from '../types/game'
 
+const ENEMY_FIRE_INTERVAL_MULTIPLIER = 1.3
+
 export class BossSystem {
   resetEnemy(enemy: EnemyUnit, now: number, wave: number) {
     enemy.bossPhase = 1
@@ -86,7 +88,7 @@ export class BossSystem {
     enemy.bossAbilityActiveUntil =
       now + this.getAbilityDuration(enemy, ability)
     enemy.nextBossAbilityAt =
-      now + this.getAbilityCooldown(enemy)
+      now + this.getAbilityCooldown(enemy, ability)
 
     return ability
   }
@@ -185,13 +187,19 @@ export class BossSystem {
       case 'radial-burst':
         return enemy.rank === 'boss' ? 1050 : 900
       case 'spread-barrage':
-        return enemy.rank === 'boss' ? 1900 : 1550
+        return Math.round(
+          (enemy.rank === 'boss' ? 1900 : 1550) *
+            ENEMY_FIRE_INTERVAL_MULTIPLIER,
+        )
       case 'summon-minions':
         return enemy.rank === 'boss' ? 1150 : 960
     }
   }
 
-  private getAbilityCooldown(enemy: EnemyUnit) {
+  private getAbilityCooldown(
+    enemy: EnemyUnit,
+    ability: BossAbility,
+  ) {
     const baseCooldown =
       enemy.rank === 'boss'
         ? GAME_CONFIG.boss.bossAbilityCooldown
@@ -203,9 +211,18 @@ export class BossSystem {
       enemy.bossEncounterIndex * 90,
     )
 
-    return Math.max(
+    const currentCooldown = Math.max(
       2350,
       baseCooldown - phaseReduction - encounterReduction,
+    )
+
+    const projectileAbilityMultiplier =
+      ability === 'radial-burst' || ability === 'spread-barrage'
+        ? ENEMY_FIRE_INTERVAL_MULTIPLIER
+        : 1
+
+    return Math.round(
+      currentCooldown * projectileAbilityMultiplier,
     )
   }
 }

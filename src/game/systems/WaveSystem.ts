@@ -16,6 +16,7 @@ type NumberMilestone = {
 
 type SpawnGroup = 'basic' | 'special'
 
+const ENEMY_SPAWN_INTERVAL_MULTIPLIER = 1.2
 const CURRENT_ACTIVE_ENEMY_CAP = 40
 const MAX_ACTIVE_HEALERS = 3
 const MAX_ACTIVE_SHIELDERS = 3
@@ -288,11 +289,16 @@ export class WaveSystem {
 
     const specialAdjustment = hasActiveSpecial ? 1.55 : 1
 
-    return Math.max(
+    const currentInterval = Math.max(
       GAME_CONFIG.wave.minimumSpawnInterval,
       Math.round(
         scaledInterval * crowdAdjustment * specialAdjustment,
       ),
+    )
+
+    // Tạo quái chậm hơn 20% nhưng giữ nguyên số quái tối đa và kích thước đợt.
+    return Math.round(
+      currentInterval * ENEMY_SPAWN_INTERVAL_MULTIPLIER,
     )
   }
 

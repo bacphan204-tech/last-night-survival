@@ -74,6 +74,8 @@ import type {
 import { formatTime } from '../utils/time'
 import { WorldBuilder } from '../world/WorldBuilder'
 
+const ENEMY_FIRE_INTERVAL_MULTIPLIER = 1.3
+
 const PLAYER_BALANCE = {
   maximumHealthMultiplier: 1.3,
   attackDamageMultiplier: 1.25,
@@ -1216,8 +1218,11 @@ export class MainScene extends Phaser.Scene {
       rangedProjectileDamage: stats.rangedProjectileDamage,
       nextRangedAttackAt:
         this.time.now +
-        stats.rangedAttackCooldown * 0.55 +
-        (this.enemyIdCounter % 4) * 120,
+        Math.round(
+          (stats.rangedAttackCooldown * 0.55 +
+            (this.enemyIdCounter % 4) * 120) *
+            ENEMY_FIRE_INTERVAL_MULTIPLIER,
+        ),
       scoreValue: stats.scoreValue,
       projectileHitRadius: stats.projectileHitRadius,
       contactRadius: stats.contactRadius,
@@ -2586,7 +2591,10 @@ private updatePlayerMovement() {
   private createBossSpreadBarrageTelegraph(enemy: EnemyUnit) {
     const generation = this.combatGeneration
     const warningDelay = enemy.rank === 'boss' ? 430 : 380
-    const volleyInterval = enemy.rank === 'boss' ? 210 : 235
+    const volleyInterval = Math.round(
+      (enemy.rank === 'boss' ? 210 : 235) *
+        ENEMY_FIRE_INTERVAL_MULTIPLIER,
+    )
     const volleyCount =
       enemy.rank === 'boss'
         ? 2 + enemy.bossPhase
@@ -3293,8 +3301,11 @@ private updatePlayerMovement() {
 
     enemy.nextRangedAttackAt =
       this.time.now +
-      enemy.rangedAttackCooldown * eliteSpeedBonus +
-      (enemy.id % 3) * 85
+      Math.round(
+        (enemy.rangedAttackCooldown * eliteSpeedBonus +
+          (enemy.id % 3) * 85) *
+          ENEMY_FIRE_INTERVAL_MULTIPLIER,
+      )
 
     const isSpreadShot = enemy.attackMode === 'spread-shot'
     const pulseColor = isSpreadShot ? 0xc084fc : 0x22d3ee
