@@ -936,7 +936,7 @@ input {
   }
 }
 
-@media (orientation: landscape) and (max-height: 650px) {
+@media (max-width: 1024px) and (orientation: landscape) and (max-height: 650px) {
   .app {
     padding: 3px;
   }
@@ -1982,7 +1982,7 @@ input {
 }
 
 /* Menu điện thoại ngang: dùng trọn viewport và ẩn cột BXH. */
-@media (orientation: landscape) and (max-height: 720px) {
+@media (max-width: 1024px) and (orientation: landscape) and (max-height: 720px) {
   html,
   body,
   #root {
