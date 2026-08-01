@@ -602,10 +602,9 @@ export default function GameStartScreen({ onStart }: GameStartScreenProps) {
         <header className="start-hero">
           <div className="start-hero-copy">
             <p className="start-kicker">LAST NIGHT SURVIVAL</p>
-            <h2>ĐÊM CUỐI CÙNG</h2>
+            
             <p className="start-description">
-              Chuẩn bị chiến giáp, chọn kỹ năng và sống sót qua đêm không có
-              bình minh.
+              Nhập Tên - CHỈ 1 LẦN - Bấm Đã Lưu - Chuẩn bị chiến giáp, chọn kỹ năng và bắt đầu sống sót - GOOD LUCK
             </p>
           </div>
 
