@@ -2,6 +2,13 @@ import { GAME_CONFIG } from '../config/gameConfig'
 
 const EXPERIENCE_REQUIREMENT_MULTIPLIER = 0.8
 
+// Giữ nhịp lên cấp ở late game mà không làm đầu game tăng quá nhanh.
+// Mốc 150 quái cơ bản tương đương 1.800 XP; chỉ khi yêu cầu cấp
+// vượt mốc này, XP nhận được mới bắt đầu được nhân dần theo cấp.
+const EXPERIENCE_GAIN_REFERENCE =
+  GAME_CONFIG.experience.normalEnemyValue * 150
+const EXPERIENCE_GAIN_SCALING_POWER = 0.85
+
 export type ExperienceGainResult = {
   levelsGained: number
 }
@@ -26,7 +33,12 @@ export class ExperienceSystem {
   }
 
   addExperience(amount: number): ExperienceGainResult {
-    this.currentExperience += Math.max(0, Math.round(amount))
+    const gainMultiplier = this.getExperienceGainMultiplier()
+
+    this.currentExperience += Math.max(
+      0,
+      Math.round(amount * gainMultiplier),
+    )
 
     let levelsGained = 0
 
@@ -55,6 +67,20 @@ export class ExperienceSystem {
 
   hasPendingLevelUp() {
     return this.pendingLevelUps > 0
+  }
+
+  getExperienceGainMultiplier() {
+    const requirementRatio =
+      this.experienceToNextLevel /
+      Math.max(1, EXPERIENCE_GAIN_REFERENCE)
+
+    return Math.max(
+      1,
+      Math.pow(
+        requirementRatio,
+        EXPERIENCE_GAIN_SCALING_POWER,
+      ),
+    )
   }
 
   getExperienceNeededForNextLevel() {
